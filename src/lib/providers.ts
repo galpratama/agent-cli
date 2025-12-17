@@ -1,0 +1,44 @@
+/**
+ * Provider Type Definitions
+ * Types and interfaces for AI providers
+ *
+ * Providers are loaded from ~/.agent-cli/providers.json
+ * See providers.example.json for reference
+ */
+
+export type ProviderCategory = "anthropic" | "chinese" | "local" | "standalone";
+
+export const CATEGORY_LABELS: Record<ProviderCategory, string> = {
+  anthropic: "Anthropic / Claude",
+  chinese: "Chinese AI",
+  local: "Local Proxies",
+  standalone: "Standalone CLIs",
+};
+
+export interface Provider {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  type: "api" | "proxy" | "gateway" | "standalone";
+  category: ProviderCategory;
+  envVars: Record<string, string>;
+  /**
+   * Environment variable mappings: maps source env var to target env var
+   * Example: { "MY_API_KEY": "ANTHROPIC_API_KEY" } will set ANTHROPIC_API_KEY from MY_API_KEY
+   */
+  envMappings?: Record<string, string>;
+  configDir: string;
+  validation: {
+    type: "env" | "http" | "command";
+    envKey?: string;
+    url?: string;
+    command?: string;
+  };
+  /** For standalone providers, the command to run instead of 'claude' */
+  command?: string;
+  /** Default arguments for the standalone command */
+  defaultArgs?: string[];
+  /** Update command for standalone providers: [command, ...args] */
+  updateCmd?: string[];
+}

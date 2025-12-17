@@ -1,0 +1,174 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/agent-cli/providers.schema.json",
+  "title": "Agent CLI Provider Configuration",
+  "description": "Configuration schema for AI providers in agent-cli",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "JSON Schema reference"
+    },
+    "_comment": {
+      "type": "string",
+      "description": "Optional comment for documentation"
+    },
+    "providers": {
+      "type": "array",
+      "description": "List of AI providers",
+      "items": {
+        "$ref": "#/definitions/Provider"
+      }
+    },
+    "disabled": {
+      "type": "array",
+      "description": "List of disabled provider IDs",
+      "items": {
+        "type": "string"
+      },
+      "default": []
+    },
+    "overrides": {
+      "type": "object",
+      "description": "Partial overrides for providers by ID",
+      "additionalProperties": {
+        "$ref": "#/definitions/ProviderOverride"
+      },
+      "default": {}
+    }
+  },
+  "required": ["providers"],
+  "definitions": {
+    "Provider": {
+      "type": "object",
+      "description": "AI provider configuration",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the provider (lowercase alphanumeric with hyphens)",
+          "pattern": "^[a-z0-9-]+$"
+        },
+        "name": {
+          "type": "string",
+          "description": "Display name for the provider"
+        },
+        "description": {
+          "type": "string",
+          "description": "Short description of the provider"
+        },
+        "icon": {
+          "type": "string",
+          "description": "Icon/emoji for the provider",
+          "default": ""
+        },
+        "type": {
+          "type": "string",
+          "description": "Provider type",
+          "enum": ["api", "proxy", "gateway", "standalone"]
+        },
+        "category": {
+          "type": "string",
+          "description": "Provider category for grouping",
+          "enum": ["anthropic", "chinese", "local", "standalone"]
+        },
+        "configDir": {
+          "type": "string",
+          "description": "Configuration directory path (supports ~ for home directory)",
+          "examples": ["~/.claude", "~/.codex"]
+        },
+        "envVars": {
+          "type": "object",
+          "description": "Environment variables to set when launching the provider",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "default": {}
+        },
+        "envMappings": {
+          "type": "object",
+          "description": "Environment variable mappings: maps source env var to target env var. Example: { \"MY_API_KEY\": \"ANTHROPIC_API_KEY\" } will read MY_API_KEY and set it as ANTHROPIC_API_KEY",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "validation": {
+          "$ref": "#/definitions/Validation"
+        },
+        "command": {
+          "type": "string",
+          "description": "Command to run for standalone providers (e.g., 'codex', 'gemini')"
+        },
+        "defaultArgs": {
+          "type": "array",
+          "description": "Default arguments to pass to the command",
+          "items": {
+            "type": "string"
+          }
+        },
+        "updateCmd": {
+          "type": "array",
+          "description": "Command and arguments to update the provider (e.g., ['npm', 'update', '-g', 'package-name'])",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": ["id", "name", "description", "type", "category", "configDir", "envVars", "validation"],
+      "additionalProperties": false
+    },
+    "ProviderOverride": {
+      "type": "object",
+      "description": "Partial provider configuration for overrides",
+      "properties": {
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "icon": { "type": "string" },
+        "type": { "type": "string", "enum": ["api", "proxy", "gateway", "standalone"] },
+        "category": { "type": "string", "enum": ["anthropic", "chinese", "local", "standalone"] },
+        "configDir": { "type": "string" },
+        "envVars": { "type": "object", "additionalProperties": { "type": "string" } },
+        "envMappings": { "type": "object", "additionalProperties": { "type": "string" } },
+        "validation": { "$ref": "#/definitions/Validation" },
+        "command": { "type": "string" },
+        "defaultArgs": { "type": "array", "items": { "type": "string" } },
+        "updateCmd": { "type": "array", "items": { "type": "string" } }
+      },
+      "additionalProperties": false
+    },
+    "Validation": {
+      "type": "object",
+      "description": "Validation configuration to check if provider is available",
+      "properties": {
+        "type": {
+          "type": "string",
+          "description": "Validation type: 'env' checks environment variable, 'http' checks URL availability, 'command' checks if command exists",
+          "enum": ["env", "http", "command"]
+        },
+        "envKey": {
+          "type": "string",
+          "description": "Environment variable to check (for type: 'env')"
+        },
+        "url": {
+          "type": "string",
+          "description": "URL to check availability (for type: 'http')",
+          "format": "uri"
+        },
+        "command": {
+          "type": "string",
+          "description": "Command to check existence (for type: 'command')"
+        }
+      },
+      "required": ["type"],
+      "allOf": [
+        {
+          "if": { "properties": { "type": { "const": "http" } } },
+          "then": { "required": ["url"] }
+        },
+        {
+          "if": { "properties": { "type": { "const": "command" } } },
+          "then": { "required": ["command"] }
+        }
+      ]
+    }
+  }
+}

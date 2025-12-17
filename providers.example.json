@@ -1,0 +1,173 @@
+{
+  "$schema": "./providers.schema.json",
+  "_comment": "Copy this file to ~/.agent-cli/providers.json and customize as needed",
+  "providers": [
+    {
+      "id": "claude",
+      "name": "Claude",
+      "description": "Default Anthropic Claude",
+      "icon": "",
+      "type": "api",
+      "category": "anthropic",
+      "configDir": "~/.claude",
+      "envVars": {},
+      "validation": { "type": "env" }
+    },
+    {
+      "id": "foundry-azure",
+      "name": "Foundry Azure",
+      "description": "Anthropic Foundry (Azure-hosted)",
+      "icon": "",
+      "type": "api",
+      "category": "anthropic",
+      "configDir": "~/.claude-foundry",
+      "envVars": {
+        "CLAUDE_CODE_USE_FOUNDRY": "1",
+        "ANTHROPIC_FOUNDRY_RESOURCE": "your-resource-name",
+        "ANTHROPIC_DEFAULT_HAIKU_MODEL": "claude-haiku-4-5",
+        "ANTHROPIC_DEFAULT_SONNET_MODEL": "claude-sonnet-4-5",
+        "ANTHROPIC_DEFAULT_OPUS_MODEL": "claude-opus-4-5"
+      },
+      "envMappings": {
+        "ANTHROPIC_FOUNDRY_API_KEY": "ANTHROPIC_FOUNDRY_API_KEY"
+      },
+      "validation": { "type": "env", "envKey": "ANTHROPIC_FOUNDRY_API_KEY" }
+    },
+    {
+      "id": "glm",
+      "name": "GLM",
+      "description": "GLM/Zhipu AI models (Z.ai)",
+      "icon": "",
+      "type": "api",
+      "category": "chinese",
+      "configDir": "~/.claudeglm",
+      "envVars": {
+        "ANTHROPIC_BASE_URL": "https://api.z.ai/api/anthropic",
+        "ANTHROPIC_DEFAULT_HAIKU_MODEL": "glm-4.5-air",
+        "ANTHROPIC_DEFAULT_SONNET_MODEL": "glm-4.6",
+        "ANTHROPIC_DEFAULT_OPUS_MODEL": "glm-4.6"
+      },
+      "envMappings": {
+        "Z_AI_API_KEY": "ANTHROPIC_AUTH_TOKEN"
+      },
+      "validation": { "type": "env", "envKey": "Z_AI_API_KEY" }
+    },
+    {
+      "id": "kimi",
+      "name": "Kimi",
+      "description": "Kimi AI",
+      "icon": "",
+      "type": "api",
+      "category": "chinese",
+      "configDir": "~/.claudekimi",
+      "envVars": {
+        "ANTHROPIC_BASE_URL": "https://api.kimi.com/coding/"
+      },
+      "envMappings": {
+        "KIMI_API_KEY": "ANTHROPIC_API_KEY"
+      },
+      "validation": { "type": "env", "envKey": "KIMI_API_KEY" }
+    },
+    {
+      "id": "minimax",
+      "name": "MiniMax",
+      "description": "MiniMax AI models",
+      "icon": "",
+      "type": "api",
+      "category": "chinese",
+      "configDir": "~/.claudeminimax",
+      "envVars": {
+        "ANTHROPIC_BASE_URL": "https://api.minimax.io/anthropic",
+        "ANTHROPIC_MODEL": "MiniMax-M2",
+        "ANTHROPIC_SMALL_FAST_MODEL": "MiniMax-M2",
+        "ANTHROPIC_DEFAULT_HAIKU_MODEL": "MiniMax-M2",
+        "ANTHROPIC_DEFAULT_SONNET_MODEL": "MiniMax-M2",
+        "ANTHROPIC_DEFAULT_OPUS_MODEL": "MiniMax-M2"
+      },
+      "envMappings": {
+        "MINIMAX_API_KEY": "ANTHROPIC_AUTH_TOKEN"
+      },
+      "validation": { "type": "env", "envKey": "MINIMAX_API_KEY" }
+    },
+    {
+      "id": "codex",
+      "name": "Codex",
+      "description": "OpenAI Codex CLI",
+      "icon": "",
+      "type": "standalone",
+      "category": "standalone",
+      "configDir": "~/.codex",
+      "envVars": {},
+      "command": "codex",
+      "validation": { "type": "command", "command": "codex" },
+      "updateCmd": ["npm", "update", "-g", "@openai/codex"]
+    },
+    {
+      "id": "vibe",
+      "name": "Vibe",
+      "description": "Mistral Devstral CLI",
+      "icon": "",
+      "type": "standalone",
+      "category": "standalone",
+      "configDir": "~/.vibe",
+      "envVars": {},
+      "command": "vibe",
+      "validation": { "type": "command", "command": "vibe" },
+      "updateCmd": ["npm", "update", "-g", "vibe-cli"]
+    },
+    {
+      "id": "opencode",
+      "name": "OpenCode",
+      "description": "OpenCode AI CLI",
+      "icon": "",
+      "type": "standalone",
+      "category": "standalone",
+      "configDir": "~/.opencode",
+      "envVars": {},
+      "command": "opencode",
+      "validation": { "type": "command", "command": "opencode" },
+      "updateCmd": ["opencode", "upgrade"]
+    },
+    {
+      "id": "gemini",
+      "name": "Gemini",
+      "description": "Google Gemini CLI",
+      "icon": "",
+      "type": "standalone",
+      "category": "standalone",
+      "configDir": "~/.gemini",
+      "envVars": {},
+      "command": "gemini",
+      "validation": { "type": "command", "command": "gemini" },
+      "updateCmd": ["npm", "update", "-g", "@anthropic-ai/claude-code"]
+    },
+    {
+      "id": "kilo",
+      "name": "Kilo",
+      "description": "KiloCode CLI",
+      "icon": "",
+      "type": "standalone",
+      "category": "standalone",
+      "configDir": "~/.kilo",
+      "envVars": {},
+      "command": "kilo",
+      "validation": { "type": "command", "command": "kilo" },
+      "updateCmd": ["npm", "update", "-g", "kilocode"]
+    },
+    {
+      "id": "qwen",
+      "name": "Qwen",
+      "description": "Alibaba Qwen CLI",
+      "icon": "",
+      "type": "standalone",
+      "category": "standalone",
+      "configDir": "~/.qwen",
+      "envVars": {},
+      "command": "qwen",
+      "validation": { "type": "command", "command": "qwen" },
+      "updateCmd": ["npm", "update", "-g", "@anthropic-ai/claude-code"]
+    }
+  ],
+  "disabled": [],
+  "overrides": {}
+}
