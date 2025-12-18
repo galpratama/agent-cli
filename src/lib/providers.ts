@@ -6,13 +6,37 @@
  * See providers.example.json for reference
  */
 
-export type ProviderCategory = "anthropic" | "chinese" | "local" | "standalone";
+export type ProviderCategory =
+  | "anthropic"
+  | "openai"
+  | "google"
+  | "meta"
+  | "mistral"
+  | "cohere"
+  | "chinese"
+  | "azure"
+  | "amazon"
+  | "opensource"
+  | "local"
+  | "standalone"
+  | "enterprise"
+  | "custom";
 
 export const CATEGORY_LABELS: Record<ProviderCategory, string> = {
   anthropic: "Anthropic / Claude",
+  openai: "OpenAI / GPT",
+  google: "Google / Gemini",
+  meta: "Meta / Llama",
+  mistral: "Mistral AI",
+  cohere: "Cohere",
   chinese: "Chinese AI",
-  local: "Local Proxies",
+  azure: "Azure AI",
+  amazon: "Amazon Bedrock",
+  opensource: "Open Source",
+  local: "Local / Self-hosted",
   standalone: "Standalone CLIs",
+  enterprise: "Enterprise",
+  custom: "Custom",
 };
 
 export interface Provider {

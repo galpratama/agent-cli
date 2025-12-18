@@ -55,7 +55,22 @@ type FormField =
   | "envVars";
 
 const PROVIDER_TYPES = ["api", "proxy", "gateway", "standalone"] as const;
-const CATEGORIES: ProviderCategory[] = ["anthropic", "chinese", "local", "standalone"];
+const CATEGORIES: ProviderCategory[] = [
+  "anthropic",
+  "openai",
+  "google",
+  "meta",
+  "mistral",
+  "cohere",
+  "chinese",
+  "azure",
+  "amazon",
+  "opensource",
+  "local",
+  "standalone",
+  "enterprise",
+  "custom",
+];
 const VALIDATION_TYPES = ["env", "http", "command"] as const;
 
 export function ProviderConfigApp(): React.ReactElement {
