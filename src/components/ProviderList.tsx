@@ -30,6 +30,8 @@ import {
   getFavorites,
   toggleFavorite,
   getUsageStats,
+  recordUsage,
+  addSession,
   getTagsForProvider,
   getAliases,
 } from "../lib/config.js";
@@ -420,6 +422,13 @@ export function ProviderList({
       const selected = filteredProviders[selectedIndex];
       if (selected) {
         setLastProvider(selected.id);
+        recordUsage(selected.id);
+        addSession({
+          providerId: selected.id,
+          timestamp: Date.now(),
+          continueSession: continueMode,
+          skipPermissions: skipPermsMode,
+        });
         onSelect(selected, { continueSession: continueMode, skipPermissions: skipPermsMode });
       }
     }

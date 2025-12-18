@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.3] - 2024-12-18
+
+### Fixed
+
+- **Session tracking now works in all launch methods** - Previously, `recordUsage()` and `addSession()` were only called when launching via profiles. Now session history and usage statistics are properly tracked when:
+  - Launching directly via `agent <provider>`
+  - Selecting a provider in the interactive TUI
+  - Launching via `agent last` command
+- Usage statistics (`agent stats`) now populate correctly
+- Session history (`agent history`) now records all launches
+
 ## [1.1.2] - 2024-12-18
 
 ### Performance

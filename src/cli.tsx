@@ -64,7 +64,7 @@ const program = new Command();
 program
   .name("agent")
   .description("AI Agent CLI - Launch Claude with multiple providers")
-  .version("1.0.0")
+  .version("1.1.3")
   .option("-d, --debug", "Show debug information")
   .option("-c, --continue", "Resume the last Claude session")
   .option("-y, --dangerously-skip-permissions", "Skip permission prompts (Claude only)")
@@ -95,6 +95,13 @@ program
         chalk.cyan(`> Launching ${provider.name}...`)
       );
       setLastProvider(provider.id);
+      recordUsage(provider.id);
+      addSession({
+        providerId: provider.id,
+        timestamp: Date.now(),
+        continueSession,
+        skipPermissions,
+      });
 
       await launchClaude({
         provider,
@@ -205,6 +212,13 @@ program
     }
 
     console.log(chalk.cyan(`> Launching ${provider.name}...`));
+    recordUsage(provider.id);
+    addSession({
+      providerId: provider.id,
+      timestamp: Date.now(),
+      continueSession: options?.continue,
+      skipPermissions: options?.dangerouslySkipPermissions,
+    });
 
     await launchClaude({
       provider,
