@@ -305,7 +305,8 @@ export function ProviderList({
   useInput((input, key) => {
     // Help overlay takes priority
     if (showHelp) {
-      if (key.escape || input === "?" || key.return) {
+      // Handle escape key (key.escape or raw escape character \x1b)
+      if (key.escape || input === "\x1b" || input === "?" || key.return || input === "q") {
         setShowHelp(false);
       }
       return;
@@ -313,7 +314,8 @@ export function ProviderList({
 
     // Details panel
     if (showDetails) {
-      if (key.escape || input === "i" || key.return) {
+      // Handle escape key (key.escape or raw escape character \x1b)
+      if (key.escape || input === "\x1b" || input === "i" || key.return || input === "q") {
         setShowDetails(false);
       }
       return;
@@ -355,13 +357,20 @@ export function ProviderList({
       setSearchQuery("");
       setSelectedIndex(0);
     }
-    // Clear search/filter with Escape
+    // Clear all filters with Escape (clears in order: search -> category -> valid only)
     else if (key.escape) {
       if (searchQuery) {
         setSearchQuery("");
         setSelectedIndex(0);
+        showStatus("Search cleared");
       } else if (categoryFilter) {
         setCategoryFilter(null);
+        setSelectedIndex(0);
+        showStatus("Category filter cleared");
+      } else if (showOnlyValid) {
+        setShowOnlyValid(false);
+        setSelectedIndex(0);
+        showStatus("Showing all providers");
       }
     }
     // Quick select by number (1-9, 0 = 10) - only when no category filter active
