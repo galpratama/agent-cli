@@ -8,13 +8,67 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- Nothing yet
+
+#### Cross-Platform Support
+- **Linux support** - Native support for Linux distributions
+- **Windows support via WSL2** - Full functionality through Windows Subsystem for Linux
+- Cross-platform home directory expansion using Node's `homedir()`
+- Platform-aware PATH separator handling
+
+#### Provider Configuration TUI (`agent config`)
+- Interactive TUI for managing providers
+- Add, edit, delete, and view providers
+- Toggle enable/disable providers
+- Real-time validation status display
+- Keyboard navigation with vim-style shortcuts
+
+#### Enhanced Provider Categories
+- Added 10 new categories: `openai`, `google`, `meta`, `mistral`, `cohere`, `azure`, `amazon`, `opensource`, `enterprise`, `custom`
+- Total of 14 categories for better organization
+
+#### Agent Selector Improvements
+
+**Navigation & Filtering:**
+- **Fuzzy search** (`/`) - Typo-tolerant search across name, ID, description, aliases, and tags
+- **Category filter** (`Ctrl+1-9`) - Quick filter by provider category
+- **Valid only filter** (`v`) - Toggle to show only available providers
+- **Auto-select last used** - Cursor starts on your last used provider
+
+**Organization:**
+- **Pin providers** (`p`) - Pin important providers to the top of the list
+- **Sort modes** (`s`) - Cycle through Name, Usage Count, Last Used, Category
+- **Usage stats display** - Shows usage count next to each provider
+
+**Information:**
+- **Help overlay** (`?`) - Full keyboard shortcuts reference
+- **Provider details panel** (`i`) - Shows complete provider info including:
+  - Validation status with detailed error messages
+  - Usage statistics
+  - Environment variables
+  - Tags and aliases
+  - Configuration directory
+
+**Actions:**
+- **Quick refresh** (`r`) - Re-validate all providers
+- **Copy to clipboard** (`C`) - Copy provider ID for scripting
+- **Open config** (`e`) - Jump to provider configuration TUI
+
+#### New Config Features
+- **Pinned providers** - Pin providers to always appear at top
+- **Provider aliases** - Create custom short names for providers
+- **Custom tags** - Tag providers for custom grouping and search
 
 ### Changed
-- Nothing yet
+- Moved recently used indicator (↺) to appear after provider name
+- Favorite indicator (★) remains in separate column
+- Updated Footer component with new keyboard shortcuts
+- Changed category grouping shortcut from `t` to `T`
+- Disabled mouse click (kept scroll for navigation)
 
 ### Fixed
-- Nothing yet
+- macOS Keychain bypass now only runs on macOS (not Linux/Windows)
+- Home directory expansion works correctly on all platforms
+- PATH separator uses correct character per platform (`:` on Unix, `;` on Windows)
 
 ## [1.0.0] - 2024-XX-XX
 

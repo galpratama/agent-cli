@@ -28,6 +28,16 @@ export interface UsageStats {
   };
 }
 
+export interface ProviderAlias {
+  alias: string;
+  providerId: string;
+}
+
+export interface ProviderTag {
+  providerId: string;
+  tags: string[];
+}
+
 interface ConfigSchema {
   lastProvider: string;
   favorites: string[];
@@ -35,6 +45,9 @@ interface ConfigSchema {
   profiles: Profile[];
   sessions: SessionRecord[];
   usageStats: UsageStats;
+  pinnedProviders: string[];
+  aliases: ProviderAlias[];
+  providerTags: ProviderTag[];
 }
 
 const config = new Conf<ConfigSchema>({
@@ -46,6 +59,9 @@ const config = new Conf<ConfigSchema>({
     profiles: [],
     sessions: [],
     usageStats: {},
+    pinnedProviders: [],
+    aliases: [],
+    providerTags: [],
   },
 });
 
@@ -148,6 +164,100 @@ export function recordUsage(providerId: string): void {
 
 export function clearUsageStats(): void {
   config.set("usageStats", {});
+}
+
+// Pinned Providers
+export function getPinnedProviders(): string[] {
+  return config.get("pinnedProviders");
+}
+
+export function togglePinned(providerId: string): boolean {
+  const pinned = config.get("pinnedProviders");
+  const isPinned = pinned.includes(providerId);
+
+  if (isPinned) {
+    config.set(
+      "pinnedProviders",
+      pinned.filter((id) => id !== providerId)
+    );
+  } else {
+    config.set("pinnedProviders", [...pinned, providerId]);
+  }
+
+  return !isPinned;
+}
+
+export function isPinned(providerId: string): boolean {
+  return config.get("pinnedProviders").includes(providerId);
+}
+
+// Aliases
+export function getAliases(): ProviderAlias[] {
+  return config.get("aliases");
+}
+
+export function setAlias(alias: string, providerId: string): void {
+  const aliases = config.get("aliases").filter((a) => a.alias !== alias);
+  config.set("aliases", [...aliases, { alias, providerId }]);
+}
+
+export function removeAlias(alias: string): boolean {
+  const aliases = config.get("aliases");
+  const filtered = aliases.filter((a) => a.alias !== alias);
+  if (filtered.length < aliases.length) {
+    config.set("aliases", filtered);
+    return true;
+  }
+  return false;
+}
+
+export function getProviderByAlias(alias: string): string | undefined {
+  const found = config.get("aliases").find((a) => a.alias === alias);
+  return found?.providerId;
+}
+
+// Tags
+export function getProviderTags(): ProviderTag[] {
+  return config.get("providerTags");
+}
+
+export function getTagsForProvider(providerId: string): string[] {
+  const found = config.get("providerTags").find((t) => t.providerId === providerId);
+  return found?.tags || [];
+}
+
+export function setTagsForProvider(providerId: string, tags: string[]): void {
+  const providerTags = config.get("providerTags").filter((t) => t.providerId !== providerId);
+  if (tags.length > 0) {
+    config.set("providerTags", [...providerTags, { providerId, tags }]);
+  } else {
+    config.set("providerTags", providerTags);
+  }
+}
+
+export function addTagToProvider(providerId: string, tag: string): void {
+  const currentTags = getTagsForProvider(providerId);
+  if (!currentTags.includes(tag)) {
+    setTagsForProvider(providerId, [...currentTags, tag]);
+  }
+}
+
+export function removeTagFromProvider(providerId: string, tag: string): void {
+  const currentTags = getTagsForProvider(providerId);
+  setTagsForProvider(providerId, currentTags.filter((t) => t !== tag));
+}
+
+export function getAllTags(): string[] {
+  const providerTags = config.get("providerTags");
+  const allTags = new Set<string>();
+  providerTags.forEach((pt) => pt.tags.forEach((t) => allTags.add(t)));
+  return Array.from(allTags).sort();
+}
+
+export function getProvidersByTag(tag: string): string[] {
+  return config.get("providerTags")
+    .filter((pt) => pt.tags.includes(tag))
+    .map((pt) => pt.providerId);
 }
 
 export { config };

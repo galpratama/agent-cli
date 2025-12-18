@@ -193,29 +193,67 @@ agent update-tools       # Update all standalone AI CLI tools
 agent update-tools gemini # Update specific tool
 ```
 
+### Configuration
+
+```bash
+agent config             # Interactive TUI for managing providers
+agent providers          # List/manage providers (CLI)
+agent providers --config # Show config file path
+```
+
 ## Keyboard Shortcuts
 
-| Key        | Action                         |
-| ---------- | ------------------------------ |
-| `↑` / `k`  | Move up                        |
-| `↓` / `j`  | Move down                      |
-| `Enter`    | Launch selected provider       |
-| `/`        | Search providers               |
-| `1-9`, `0` | Quick select (1-10)            |
-| `f`        | Toggle favorite                |
-| `c`        | Toggle --continue mode         |
-| `y`        | Toggle --skip-permissions mode |
-| `u`        | Update standalone provider     |
-| `t`        | Toggle category grouping       |
-| `g`        | Go to first item               |
-| `G`        | Go to last item                |
-| `q`        | Quit                           |
+### Navigation
+
+| Key        | Action                   |
+| ---------- | ------------------------ |
+| `↑` / `k`  | Move up                  |
+| `↓` / `j`  | Move down                |
+| `g`        | Go to first item         |
+| `G`        | Go to last item          |
+| `1-9`, `0` | Quick select (1-10)      |
+| `Enter`    | Launch selected provider |
+| `q`        | Quit                     |
+
+### Search & Filter
+
+| Key        | Action                              |
+| ---------- | ----------------------------------- |
+| `/`        | Start fuzzy search                  |
+| `Ctrl+1-9` | Filter by category                  |
+| `v`        | Toggle show valid providers only    |
+| `Esc`      | Clear search/filter                 |
+
+### Organization
+
+| Key | Action                                    |
+| --- | ----------------------------------------- |
+| `f` | Toggle favorite                           |
+| `p` | Toggle pinned (pinned appear at top)      |
+| `s` | Cycle sort mode (Name/Usage/Last/Category)|
+| `T` | Toggle category grouping                  |
+
+### Actions
+
+| Key | Action                         |
+| --- | ------------------------------ |
+| `?` | Show help overlay              |
+| `i` | Show provider details panel    |
+| `r` | Refresh validation status      |
+| `u` | Update standalone provider     |
+| `e` | Open config TUI                |
+| `C` | Copy provider ID to clipboard  |
+
+### Modes
+
+| Key | Action                         |
+| --- | ------------------------------ |
+| `c` | Toggle --continue mode         |
+| `y` | Toggle --skip-permissions mode |
 
 ## Mouse Support
 
-- **Click** - Select provider
-- **Double-click** - Launch provider
-- **Scroll** - Navigate list
+- **Scroll** - Navigate list (scroll wheel up/down)
 
 ## Configuration
 
