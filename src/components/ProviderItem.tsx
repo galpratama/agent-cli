@@ -1,9 +1,10 @@
 /**
  * ProviderItem Component
  * Renders a single provider in the selection list
+ * Memoized for performance - only re-renders when props change
  */
 
-import React from "react";
+import React, { memo } from "react";
 import { Box, Text } from "ink";
 import { Provider } from "../lib/providers.js";
 import { ValidationResult } from "../lib/validate.js";
@@ -19,7 +20,7 @@ interface ProviderItemProps {
   isLast?: boolean;
 }
 
-export function ProviderItem({
+function ProviderItemComponent({
   provider,
   index,
   isSelected,
@@ -81,3 +82,17 @@ export function ProviderItem({
     </Box>
   );
 }
+
+// Memoize to prevent unnecessary re-renders when parent state changes
+export const ProviderItem = memo(ProviderItemComponent, (prevProps, nextProps) => {
+  // Custom comparison for better performance
+  return (
+    prevProps.provider.id === nextProps.provider.id &&
+    prevProps.index === nextProps.index &&
+    prevProps.isSelected === nextProps.isSelected &&
+    prevProps.isHighlighted === nextProps.isHighlighted &&
+    prevProps.validationResult?.valid === nextProps.validationResult?.valid &&
+    prevProps.isFavorite === nextProps.isFavorite &&
+    prevProps.isLast === nextProps.isLast
+  );
+});

@@ -23,7 +23,7 @@ import Spinner from "ink-spinner";
 import { spawn, spawnSync } from "child_process";
 import { Provider, ProviderCategory, CATEGORY_LABELS } from "../lib/providers.js";
 import { getAllProviders } from "../lib/provider-config.js";
-import { validateAllProviders, ValidationResult } from "../lib/validate.js";
+import { validateAllProviders, ValidationResult, clearValidationCache } from "../lib/validate.js";
 import {
   getLastProvider,
   setLastProvider,
@@ -63,22 +63,31 @@ interface ProviderListProps {
   onOpenConfig?: () => void;
 }
 
-// Simple fuzzy match function
+// Optimized fuzzy match function with early exit
 function fuzzyMatch(text: string, query: string): boolean {
+  if (!query) return true;
+  if (!text) return false;
+
   const lowerText = text.toLowerCase();
   const lowerQuery = query.toLowerCase();
 
-  // Direct substring match
+  // Direct substring match (fast path)
   if (lowerText.includes(lowerQuery)) return true;
+
+  // Early exit: if query is longer than text, can't match
+  if (lowerQuery.length > lowerText.length) return false;
 
   // Fuzzy match: all query chars appear in order
   let queryIndex = 0;
-  for (let i = 0; i < lowerText.length && queryIndex < lowerQuery.length; i++) {
-    if (lowerText[i] === lowerQuery[queryIndex]) {
+  const queryLen = lowerQuery.length;
+  const textLen = lowerText.length;
+
+  for (let i = 0; i < textLen && queryIndex < queryLen; i++) {
+    if (lowerText.charCodeAt(i) === lowerQuery.charCodeAt(queryIndex)) {
       queryIndex++;
     }
   }
-  return queryIndex === lowerQuery.length;
+  return queryIndex === queryLen;
 }
 
 export function ProviderList({
@@ -155,6 +164,23 @@ export function ProviderList({
     });
   }, [allProviders, pinnedProviders, favorites, sortMode, usageStats]);
 
+  // Pre-compute alias map for O(1) lookups (instead of creating in filter loop)
+  const aliasMap = useMemo(() => {
+    return new Map(aliases.map((a) => [a.providerId, a.alias]));
+  }, [aliases]);
+
+  // Pre-compute tags map for O(1) lookups (avoids repeated getTagsForProvider calls)
+  const tagsMap = useMemo(() => {
+    const map = new Map<string, string>();
+    allProviders.forEach((p) => {
+      const tags = getTagsForProvider(p.id);
+      if (tags.length > 0) {
+        map.set(p.id, tags.join(" "));
+      }
+    });
+    return map;
+  }, [allProviders]);
+
   // Filter providers based on search query, category, and validity
   const filteredProviders = useMemo(() => {
     let result = sortedProviders;
@@ -169,15 +195,17 @@ export function ProviderList({
       result = result.filter((p) => validationResults.get(p.id)?.valid);
     }
 
-    // Search filter with fuzzy matching
+    // Search filter with fuzzy matching (using pre-computed maps)
     if (searchQuery) {
-      const aliasMap = new Map(aliases.map((a) => [a.providerId, a.alias]));
       result = result.filter((p) => {
+        // Fast path: check ID and name first (most common matches)
+        if (fuzzyMatch(p.id, searchQuery) || fuzzyMatch(p.name, searchQuery)) {
+          return true;
+        }
+        // Then check description, alias, and tags
         const alias = aliasMap.get(p.id) || "";
-        const tags = getTagsForProvider(p.id).join(" ");
+        const tags = tagsMap.get(p.id) || "";
         return (
-          fuzzyMatch(p.id, searchQuery) ||
-          fuzzyMatch(p.name, searchQuery) ||
           fuzzyMatch(p.description, searchQuery) ||
           fuzzyMatch(alias, searchQuery) ||
           fuzzyMatch(tags, searchQuery)
@@ -186,7 +214,7 @@ export function ProviderList({
     }
 
     return result;
-  }, [sortedProviders, categoryFilter, showOnlyValid, searchQuery, validationResults, aliases]);
+  }, [sortedProviders, categoryFilter, showOnlyValid, searchQuery, validationResults, aliasMap, tagsMap]);
 
   // Auto-select last used provider on mount
   useEffect(() => {
@@ -220,10 +248,11 @@ export function ProviderList({
     setTimeout(() => setStatusMessage(null), 2000);
   }, []);
 
-  // Refresh validation
+  // Refresh validation (clears cache for fresh results)
   const refreshValidation = useCallback(() => {
     setIsValidating(true);
     showStatus("Refreshing...");
+    clearValidationCache(); // Clear cache to force fresh validation
     validateAllProviders(allProviders).then((results) => {
       setValidationResults(results);
       setIsValidating(false);

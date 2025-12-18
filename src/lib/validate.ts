@@ -1,6 +1,7 @@
 /**
  * Provider Validation
  * Checks if providers are properly configured and available
+ * Includes caching for performance optimization
  */
 
 import { execFileSync } from "child_process";
@@ -9,6 +10,35 @@ import { Provider } from "./providers.js";
 export interface ValidationResult {
   valid: boolean;
   message: string;
+}
+
+// Cache validation results with TTL (5 minutes)
+const CACHE_TTL = 5 * 60 * 1000;
+const validationCache = new Map<string, { result: ValidationResult; timestamp: number }>();
+
+/**
+ * Get cached validation result if still valid
+ */
+function getCachedResult(providerId: string): ValidationResult | null {
+  const cached = validationCache.get(providerId);
+  if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+    return cached.result;
+  }
+  return null;
+}
+
+/**
+ * Cache a validation result
+ */
+function setCachedResult(providerId: string, result: ValidationResult): void {
+  validationCache.set(providerId, { result, timestamp: Date.now() });
+}
+
+/**
+ * Clear the validation cache (useful for manual refresh)
+ */
+export function clearValidationCache(): void {
+  validationCache.clear();
 }
 
 /**
@@ -26,60 +56,69 @@ function commandExists(command: string): boolean {
 
 /**
  * Validate a provider's configuration
+ * Uses caching to avoid redundant validation calls
  */
 export async function validateProvider(
-  provider: Provider
+  provider: Provider,
+  skipCache = false
 ): Promise<ValidationResult> {
+  // Check cache first (unless explicitly skipped)
+  if (!skipCache) {
+    const cached = getCachedResult(provider.id);
+    if (cached) return cached;
+  }
+
   const { validation } = provider;
+  let result: ValidationResult;
 
   if (validation.type === "env") {
     // No env key means always valid (like default claude)
     if (!validation.envKey) {
-      return { valid: true, message: "Always available" };
+      result = { valid: true, message: "Always available" };
+    } else {
+      const value = process.env[validation.envKey];
+      if (value && value.length > 0) {
+        result = { valid: true, message: "API key configured" };
+      } else {
+        result = { valid: false, message: `${validation.envKey} not set` };
+      }
     }
-
-    const value = process.env[validation.envKey];
-    if (value && value.length > 0) {
-      return { valid: true, message: "API key configured" };
-    }
-    return { valid: false, message: `${validation.envKey} not set` };
-  }
-
-  if (validation.type === "http") {
+  } else if (validation.type === "http") {
     if (!validation.url) {
-      return { valid: false, message: "No URL configured" };
+      result = { valid: false, message: "No URL configured" };
+    } else {
+      try {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 2000);
+
+        await fetch(validation.url, {
+          method: "GET",
+          signal: controller.signal,
+        });
+
+        clearTimeout(timeout);
+
+        // Any response means the server is reachable
+        result = { valid: true, message: `Reachable at ${validation.url}` };
+      } catch {
+        result = { valid: false, message: `Not reachable at ${validation.url}` };
+      }
     }
-
-    try {
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 2000);
-
-      const response = await fetch(validation.url, {
-        method: "GET",
-        signal: controller.signal,
-      });
-
-      clearTimeout(timeout);
-
-      // Any response means the server is reachable
-      return { valid: true, message: `Reachable at ${validation.url}` };
-    } catch {
-      return { valid: false, message: `Not reachable at ${validation.url}` };
-    }
-  }
-
-  if (validation.type === "command") {
+  } else if (validation.type === "command") {
     if (!validation.command) {
-      return { valid: false, message: "No command configured" };
+      result = { valid: false, message: "No command configured" };
+    } else if (commandExists(validation.command)) {
+      result = { valid: true, message: `${validation.command} found in PATH` };
+    } else {
+      result = { valid: false, message: `${validation.command} not found` };
     }
-
-    if (commandExists(validation.command)) {
-      return { valid: true, message: `${validation.command} found in PATH` };
-    }
-    return { valid: false, message: `${validation.command} not found` };
+  } else {
+    result = { valid: false, message: "Unknown validation type" };
   }
 
-  return { valid: false, message: "Unknown validation type" };
+  // Cache the result before returning
+  setCachedResult(provider.id, result);
+  return result;
 }
 
 /**
