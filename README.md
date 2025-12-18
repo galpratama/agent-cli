@@ -1,7 +1,3 @@
-<p align="center">
-  <img src="https://raw.githubusercontent.com/galpratama/agent-cli/main/assets/logo.png" alt="Agent CLI Logo" width="200">
-</p>
-
 <h1 align="center">Agent CLI</h1>
 
 <p align="center">
@@ -16,7 +12,7 @@
 </p>
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/galpratama/agent-cli/main/assets/demo.gif" alt="Agent CLI Demo" width="700">
+  <img src="demo.png" alt="Agent CLI Demo" width="700">
 </p>
 
 ---
@@ -42,6 +38,64 @@ Managing multiple AI CLI tools is painful. Each provider has its own command, co
 - **Saved Profiles** - Quick access to favorite configurations
 - **Auto-Fallback** - Automatically try next provider on failure
 - **Isolated Configs** - Each provider has its own configuration directory
+
+## Platform Support
+
+| Platform | Status | Notes |
+| -------- | ------ | ----- |
+| macOS | ✅ Fully Supported | Native support |
+| Linux | ✅ Fully Supported | Native support |
+| Windows | ✅ Supported via WSL2 | Recommended approach |
+
+### Windows Users (WSL2)
+
+For the best experience on Windows, we recommend using **WSL2** (Windows Subsystem for Linux):
+
+1. **Install WSL2** (if not already installed):
+   ```powershell
+   # Run in PowerShell as Administrator
+   wsl --install
+   ```
+
+2. **Install Node.js in WSL2**:
+   ```bash
+   # Inside WSL2 terminal
+   curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+   sudo apt-get install -y nodejs
+   ```
+
+3. **Clone and install Agent CLI**:
+   ```bash
+   git clone https://github.com/galpratama/agent-cli.git
+   cd agent-cli
+   npm install
+   npm run link
+   ```
+
+4. **Install your AI CLI tools** (e.g., Claude):
+   ```bash
+   npm install -g @anthropic-ai/claude-code
+   ```
+
+> **Why WSL2?** Most AI CLI tools (Claude, Codex, etc.) are designed for Unix-like environments. WSL2 provides the best compatibility and performance on Windows.
+
+### Linux Users
+
+Agent CLI works natively on Linux. Just ensure you have Node.js 18+ installed:
+
+```bash
+# Ubuntu/Debian
+curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+sudo apt-get install -y nodejs
+
+# Fedora
+sudo dnf install nodejs
+
+# Arch Linux
+sudo pacman -S nodejs npm
+```
+
+Then follow the standard installation steps below.
 
 ## Quick Start
 
@@ -71,19 +125,19 @@ agent claude
 
 ## Supported Providers
 
-| Provider | Type | Category | Description |
-|----------|------|----------|-------------|
-| Claude | API | Anthropic | Default Anthropic Claude |
-| Foundry Azure | API | Anthropic | Azure-hosted Anthropic Foundry |
-| GLM | API | Chinese | GLM/Zhipu AI models (Z.ai) |
-| Kimi | API | Chinese | Kimi AI |
-| MiniMax | API | Chinese | MiniMax AI models |
-| Codex | Standalone | CLI | OpenAI Codex CLI |
-| Vibe | Standalone | CLI | Mistral Devstral CLI |
-| OpenCode | Standalone | CLI | OpenCode AI CLI |
-| Gemini | Standalone | CLI | Google Gemini CLI |
-| Kilo | Standalone | CLI | KiloCode CLI |
-| Qwen | Standalone | CLI | Alibaba Qwen CLI |
+| Provider      | Type       | Category  | Description                    |
+| ------------- | ---------- | --------- | ------------------------------ |
+| Claude        | API        | Anthropic | Default Anthropic Claude       |
+| Foundry Azure | API        | Anthropic | Azure-hosted Anthropic Foundry |
+| GLM           | API        | Chinese   | GLM/Zhipu AI models (Z.ai)     |
+| Kimi          | API        | Chinese   | Kimi AI                        |
+| MiniMax       | API        | Chinese   | MiniMax AI models              |
+| Codex         | Standalone | CLI       | OpenAI Codex CLI               |
+| Vibe          | Standalone | CLI       | Mistral Devstral CLI           |
+| OpenCode      | Standalone | CLI       | OpenCode AI CLI                |
+| Gemini        | Standalone | CLI       | Google Gemini CLI              |
+| Kilo          | Standalone | CLI       | KiloCode CLI                   |
+| Qwen          | Standalone | CLI       | Alibaba Qwen CLI               |
 
 ## Commands
 
@@ -141,21 +195,21 @@ agent update-tools gemini # Update specific tool
 
 ## Keyboard Shortcuts
 
-| Key | Action |
-|-----|--------|
-| `↑` / `k` | Move up |
-| `↓` / `j` | Move down |
-| `Enter` | Launch selected provider |
-| `/` | Search providers |
-| `1-9`, `0` | Quick select (1-10) |
-| `f` | Toggle favorite |
-| `c` | Toggle --continue mode |
-| `y` | Toggle --skip-permissions mode |
-| `u` | Update standalone provider |
-| `t` | Toggle category grouping |
-| `g` | Go to first item |
-| `G` | Go to last item |
-| `q` | Quit |
+| Key        | Action                         |
+| ---------- | ------------------------------ |
+| `↑` / `k`  | Move up                        |
+| `↓` / `j`  | Move down                      |
+| `Enter`    | Launch selected provider       |
+| `/`        | Search providers               |
+| `1-9`, `0` | Quick select (1-10)            |
+| `f`        | Toggle favorite                |
+| `c`        | Toggle --continue mode         |
+| `y`        | Toggle --skip-permissions mode |
+| `u`        | Update standalone provider     |
+| `t`        | Toggle category grouping       |
+| `g`        | Go to first item               |
+| `G`        | Go to last item                |
+| `q`        | Quit                           |
 
 ## Mouse Support
 
@@ -202,21 +256,21 @@ agent setup
 
 ### Provider Properties
 
-| Property | Type | Description |
-|----------|------|-------------|
-| `id` | string | Unique identifier (lowercase, alphanumeric, hyphens) |
-| `name` | string | Display name |
-| `description` | string | Short description |
-| `icon` | string | Emoji/icon for display |
-| `type` | string | `api`, `proxy`, `gateway`, or `standalone` |
-| `category` | string | `anthropic`, `chinese`, `local`, or `standalone` |
-| `configDir` | string | Configuration directory (supports `~`) |
-| `envVars` | object | Environment variables to set |
-| `envMappings` | object | Map source env vars to target env vars |
-| `validation` | object | Validation configuration |
-| `command` | string | Command to run (standalone providers) |
-| `defaultArgs` | array | Default arguments for command |
-| `updateCmd` | array | Update command for standalone providers |
+| Property      | Type   | Description                                          |
+| ------------- | ------ | ---------------------------------------------------- |
+| `id`          | string | Unique identifier (lowercase, alphanumeric, hyphens) |
+| `name`        | string | Display name                                         |
+| `description` | string | Short description                                    |
+| `icon`        | string | Emoji/icon for display                               |
+| `type`        | string | `api`, `proxy`, `gateway`, or `standalone`           |
+| `category`    | string | `anthropic`, `chinese`, `local`, or `standalone`     |
+| `configDir`   | string | Configuration directory (supports `~`)               |
+| `envVars`     | object | Environment variables to set                         |
+| `envMappings` | object | Map source env vars to target env vars               |
+| `validation`  | object | Validation configuration                             |
+| `command`     | string | Command to run (standalone providers)                |
+| `defaultArgs` | array  | Default arguments for command                        |
+| `updateCmd`   | array  | Update command for standalone providers              |
 
 ### Validation Types
 
@@ -350,6 +404,7 @@ You can add custom providers to your configuration:
 ### Provider Isolation
 
 Each provider gets its own configuration directory. This allows you to:
+
 - Have different settings per provider
 - Maintain separate conversation histories
 - Use different API keys without conflicts
@@ -445,11 +500,13 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 ### Provider shows as unavailable
 
 1. Check if the required environment variable is set:
+
    ```bash
    agent check
    ```
 
 2. Verify your API key is correct:
+
    ```bash
    echo $YOUR_API_KEY
    ```
@@ -471,6 +528,7 @@ export PATH="$PATH:$(npm config get prefix)/bin"
 ### Provider launches but fails immediately
 
 1. Check if the underlying CLI is installed:
+
    ```bash
    which claude  # or gemini, codex, etc.
    ```
@@ -479,6 +537,50 @@ export PATH="$PATH:$(npm config get prefix)/bin"
    ```bash
    claude --help
    ```
+
+### Platform-Specific Issues
+
+#### Linux
+
+**Terminal UI not rendering correctly:**
+- Ensure your terminal supports 256 colors: `echo $TERM` should show `xterm-256color` or similar
+- Try setting: `export TERM=xterm-256color`
+
+**Permission denied errors:**
+```bash
+# If npm link fails with permission errors
+sudo npm run link
+# Or configure npm to use a different directory
+npm config set prefix ~/.npm-global
+export PATH="$PATH:$HOME/.npm-global/bin"
+```
+
+#### Windows (WSL2)
+
+**WSL2 not installed:**
+```powershell
+# Run in PowerShell as Administrator
+wsl --install
+# Restart your computer after installation
+```
+
+**Node.js not found in WSL2:**
+```bash
+# Install Node.js in WSL2
+curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+sudo apt-get install -y nodejs
+```
+
+**Cannot access Windows files from WSL2:**
+- Windows drives are mounted at `/mnt/c/`, `/mnt/d/`, etc.
+- For best performance, clone repositories inside WSL2's filesystem (e.g., `~/projects/`)
+
+**Environment variables not persisting:**
+```bash
+# Add to ~/.bashrc or ~/.zshrc in WSL2
+export YOUR_API_KEY="your-key-here"
+source ~/.bashrc
+```
 
 ## License
 

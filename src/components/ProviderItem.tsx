@@ -37,7 +37,9 @@ export function ProviderItem({
     <Box>
       {/* Number shortcut */}
       <Box width={2}>
-        <Text color="gray" dimColor>{displayNum}</Text>
+        <Text color="gray" dimColor>
+          {displayNum}
+        </Text>
       </Box>
 
       {/* Selection indicator */}
@@ -57,7 +59,7 @@ export function ProviderItem({
       </Box>
 
       {/* Provider name */}
-      <Box width={20}>
+      <Box width={30}>
         <Text
           bold={isHighlighted}
           color={isHighlighted ? "cyan" : isValid ? "white" : "gray"}

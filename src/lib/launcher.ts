@@ -6,11 +6,18 @@
 import { spawn } from "child_process";
 import { mkdirSync, writeFileSync, chmodSync, rmSync } from "fs";
 import { join } from "path";
-import { tmpdir } from "os";
+import { tmpdir, homedir, platform } from "os";
 import { randomUUID } from "crypto";
 import { Provider } from "./providers.js";
 import { getAllProviders } from "./provider-config.js";
 import { validateProvider } from "./validate.js";
+
+/** Current platform */
+const isWindows = platform() === "win32";
+const isMacOS = platform() === "darwin";
+
+/** Get the PATH separator for the current platform */
+const PATH_SEPARATOR = isWindows ? ";" : ":";
 
 export interface LaunchOptions {
   provider: Provider;
@@ -27,10 +34,26 @@ export interface LaunchOptions {
 }
 
 /**
+ * Expand ~ to home directory (cross-platform)
+ */
+function expandHome(path: string): string {
+  if (path.startsWith("~")) {
+    return path.replace("~", homedir());
+  }
+  return path;
+}
+
+/**
  * Create a fake security executable to bypass macOS Keychain
  * This forces Claude to save credentials to .credentials.json instead
+ * Only needed on macOS - other platforms don't have the security command
  */
-function createFakeSecurityPath(): string {
+function createFakeSecurityPath(): string | null {
+  // Only needed on macOS
+  if (!isMacOS) {
+    return null;
+  }
+
   const tempDir = join(tmpdir(), `agent-cli-${randomUUID()}`);
   mkdirSync(tempDir, { recursive: true });
 
@@ -52,15 +75,15 @@ exit 1
  */
 function buildEnv(
   provider: Provider,
-  tempDir: string
+  tempDir: string | null
 ): NodeJS.ProcessEnv {
   const env = { ...process.env };
 
   // Set provider name
   env.CLAUDE_PROVIDER = provider.name;
 
-  // Set config directory (expand ~)
-  const configDir = provider.configDir.replace("~", process.env.HOME || "");
+  // Set config directory (expand ~ cross-platform)
+  const configDir = expandHome(provider.configDir);
   env.CLAUDE_CONFIG_DIR = configDir;
 
   // Ensure config directory exists
@@ -81,8 +104,10 @@ function buildEnv(
     }
   }
 
-  // Prepend temp dir to PATH for fake security
-  env.PATH = `${tempDir}:${env.PATH}`;
+  // Prepend temp dir to PATH for fake security (macOS only)
+  if (tempDir) {
+    env.PATH = `${tempDir}${PATH_SEPARATOR}${env.PATH}`;
+  }
 
   return env;
 }
@@ -169,12 +194,14 @@ export async function launchClaude(options: LaunchOptions): Promise<void> {
     cwd: process.cwd(),
   });
 
-  // Cleanup on exit
+  // Cleanup on exit (only needed on macOS where we create temp dir)
   const cleanup = () => {
-    try {
-      rmSync(tempDir, { recursive: true, force: true });
-    } catch {
-      // Ignore cleanup errors
+    if (tempDir) {
+      try {
+        rmSync(tempDir, { recursive: true, force: true });
+      } catch {
+        // Ignore cleanup errors
+      }
     }
   };
 
