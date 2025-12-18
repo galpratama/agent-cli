@@ -57,7 +57,7 @@ export function ProviderItem({
       </Box>
 
       {/* Provider name */}
-      <Box width={14}>
+      <Box width={20}>
         <Text
           bold={isHighlighted}
           color={isHighlighted ? "cyan" : isValid ? "white" : "gray"}
