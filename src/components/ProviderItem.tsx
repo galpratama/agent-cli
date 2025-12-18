@@ -59,14 +59,15 @@ function ProviderItemComponent({
         <StatusBadge valid={isValid} loading={isLoading} />
       </Box>
 
-      {/* Provider name with recently used indicator */}
-      <Box width={32}>
+      {/* Provider name with ID and recently used indicator */}
+      <Box width={48}>
         <Text
           bold={isHighlighted}
           color={isHighlighted ? "cyan" : isValid ? "white" : "gray"}
         >
           {provider.name}
         </Text>
+        <Text color="gray" dimColor> ({provider.id})</Text>
         {isLast && <Text color="blue"> ↺</Text>}
       </Box>
 
