@@ -14,6 +14,7 @@ import { dirname, resolve } from "path";
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from "fs";
 import { homedir } from "os";
 import { App } from "./components/App.js";
+import { ProviderConfigApp } from "./components/ProviderConfigApp.js";
 import { Provider } from "./lib/providers.js";
 import {
   getAllProviders,
@@ -667,6 +668,15 @@ program
 
     console.log(`\n  ${chalk.gray("○")} Provider  ${chalk.yellow("●")} Overridden\n`);
     console.log(chalk.gray(`  Config: ${getConfigPath()}\n`));
+  });
+
+// ==================== PROVIDER CONFIG TUI ====================
+
+program
+  .command("config")
+  .description("Interactive TUI for managing provider configuration")
+  .action(() => {
+    render(<ProviderConfigApp />);
   });
 
 // ==================== SETUP WIZARD ====================
