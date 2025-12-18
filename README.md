@@ -32,7 +32,7 @@ Managing multiple AI CLI tools is painful. Each provider has its own command, co
 - **Multi-Provider Support** - Claude, GLM, Kimi, MiniMax, Codex, Gemini, and more
 - **Interactive TUI** - Beautiful interface with gradient colors and ASCII art
 - **Keyboard Shortcuts** - Vim-style navigation, quick number selection
-- **Mouse Support** - Click to select, double-click to launch, scroll to navigate
+- **Mouse Support** - Scroll to navigate
 - **Provider Validation** - Real-time status checking for all providers
 - **Session Management** - Track history, favorites, and usage statistics
 - **Saved Profiles** - Quick access to favorite configurations
