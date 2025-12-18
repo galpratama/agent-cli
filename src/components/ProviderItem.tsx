@@ -58,20 +58,20 @@ export function ProviderItem({
         <StatusBadge valid={isValid} loading={isLoading} />
       </Box>
 
-      {/* Provider name */}
-      <Box width={30}>
+      {/* Provider name with recently used indicator */}
+      <Box width={32}>
         <Text
           bold={isHighlighted}
           color={isHighlighted ? "cyan" : isValid ? "white" : "gray"}
         >
           {provider.name}
         </Text>
+        {isLast && <Text color="blue"> ↺</Text>}
       </Box>
 
-      {/* Indicators */}
-      <Box width={4}>
+      {/* Favorite indicator */}
+      <Box width={2}>
         {isFavorite && <Text color="yellow">★</Text>}
-        {isLast && <Text color="blue">↺</Text>}
       </Box>
 
       {/* Description */}
