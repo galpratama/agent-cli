@@ -45,9 +45,6 @@ export function Footer({ showHelp = true }: FooterProps): React.ReactElement {
           <Text color="cyan">f</Text> Favorite
         </Text>
         <Text color="gray">
-          <Text color="cyan">p</Text> Pin
-        </Text>
-        <Text color="gray">
           <Text color="cyan">s</Text> Sort
         </Text>
         <Text color="gray">
@@ -89,9 +86,6 @@ export function Footer({ showHelp = true }: FooterProps): React.ReactElement {
         </Text>
         <Text color="gray">
           <Text color="blue">↺</Text> Last used
-        </Text>
-        <Text color="gray">
-          <Text color="magenta">📌</Text> Pinned
         </Text>
       </Box>
     </Box>

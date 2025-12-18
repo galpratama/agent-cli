@@ -228,8 +228,7 @@ agent providers --config # Show config file path
 
 | Key | Action                                    |
 | --- | ----------------------------------------- |
-| `f` | Toggle favorite                           |
-| `p` | Toggle pinned (pinned appear at top)      |
+| `f` | Toggle favorite (favorites appear at top) |
 | `s` | Cycle sort mode (Name/Usage/Last/Category)|
 | `T` | Toggle category grouping                  |
 

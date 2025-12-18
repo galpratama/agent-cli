@@ -29,8 +29,6 @@ import {
   setLastProvider,
   getFavorites,
   toggleFavorite,
-  getPinnedProviders,
-  togglePinned,
   getUsageStats,
   getTagsForProvider,
   getAliases,
@@ -98,7 +96,6 @@ export function ProviderList({
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [validationResults, setValidationResults] = useState<Map<string, ValidationResult>>(new Map());
   const [favorites, setFavorites] = useState<string[]>(getFavorites());
-  const [pinnedProviders, setPinnedProviders] = useState<string[]>(getPinnedProviders());
   const [continueMode, setContinueMode] = useState(false);
   const [skipPermsMode, setSkipPermsMode] = useState(false);
   const [lastClickTime, setLastClickTime] = useState(0);
@@ -126,13 +123,7 @@ export function ProviderList({
   // Sort providers based on current sort mode
   const sortedProviders = useMemo(() => {
     return [...allProviders].sort((a, b) => {
-      // Pinned providers always first
-      const aPinned = pinnedProviders.includes(a.id);
-      const bPinned = pinnedProviders.includes(b.id);
-      if (aPinned && !bPinned) return -1;
-      if (!aPinned && bPinned) return 1;
-
-      // Then favorites
+      // Favorites always first
       const aFav = favorites.includes(a.id);
       const bFav = favorites.includes(b.id);
       if (aFav && !bFav) return -1;
@@ -162,7 +153,7 @@ export function ProviderList({
           return a.name.localeCompare(b.name);
       }
     });
-  }, [allProviders, pinnedProviders, favorites, sortMode, usageStats]);
+  }, [allProviders, favorites, sortMode, usageStats]);
 
   // Pre-compute alias map for O(1) lookups (instead of creating in filter loop)
   const aliasMap = useMemo(() => {
@@ -441,15 +432,6 @@ export function ProviderList({
         showStatus(isFav ? `★ ${selected.name} favorited` : `☆ ${selected.name} unfavorited`);
       }
     }
-    // Toggle pinned
-    else if (input === "p") {
-      const selected = filteredProviders[selectedIndex];
-      if (selected) {
-        const isPinnedNow = togglePinned(selected.id);
-        setPinnedProviders(getPinnedProviders());
-        showStatus(isPinnedNow ? `📌 ${selected.name} pinned` : `${selected.name} unpinned`);
-      }
-    }
     // Toggle continue mode
     else if (input === "c") {
       setContinueMode((prev) => !prev);
@@ -531,7 +513,6 @@ export function ProviderList({
           <Text></Text>
           <Text><Text color="cyan">Organization</Text></Text>
           <Text dimColor>  f           Toggle favorite</Text>
-          <Text dimColor>  p           Toggle pinned</Text>
           <Text dimColor>  s           Cycle sort mode</Text>
           <Text dimColor>  T           Toggle category groups</Text>
           <Text></Text>
@@ -563,14 +544,12 @@ export function ProviderList({
     const stats = usageStats[provider.id];
     const tags = getTagsForProvider(provider.id);
     const alias = aliases.find((a) => a.providerId === provider.id)?.alias;
-    const isPinnedProvider = pinnedProviders.includes(provider.id);
     const isFavorite = favorites.includes(provider.id);
 
     return (
       <Box flexDirection="column" padding={1}>
         <Box marginBottom={1}>
           <Text bold color="cyan">{provider.icon} {provider.name}</Text>
-          {isPinnedProvider && <Text color="magenta"> 📌</Text>}
           {isFavorite && <Text color="yellow"> ★</Text>}
         </Box>
         <Box flexDirection="column">
@@ -664,8 +643,6 @@ export function ProviderList({
           const showHeader = groupByCategory && !searchQuery && provider.category !== lastCat;
           lastCat = provider.category;
           const stats = usageStats[provider.id];
-          const isPinnedProvider = pinnedProviders.includes(provider.id);
-
           return (
             <React.Fragment key={provider.id}>
               {showHeader && (
@@ -687,8 +664,6 @@ export function ProviderList({
                 {stats && stats.count > 0 && (
                   <Text dimColor> ({stats.count})</Text>
                 )}
-                {/* Pinned indicator */}
-                {isPinnedProvider && <Text color="magenta"> 📌</Text>}
               </Box>
             </React.Fragment>
           );

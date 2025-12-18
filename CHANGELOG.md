@@ -80,7 +80,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 #### New Config Features
 
-- **Pinned providers** - Pin providers to always appear at top
 - **Provider aliases** - Create custom short names for providers
 - **Custom tags** - Tag providers for custom grouping and search
 
