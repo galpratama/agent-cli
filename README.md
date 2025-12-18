@@ -201,6 +201,16 @@ agent providers          # List/manage providers (CLI)
 agent providers --config # Show config file path
 ```
 
+> **`agent setup` vs `agent config`** — These commands serve different purposes:
+>
+> | Command | Purpose | Scope |
+> |---------|---------|-------|
+> | `agent setup` | Configure **API keys** (environment variables) | Shell profiles (`~/.zshrc`, `~/.bashrc`) |
+> | `agent config` | Manage **provider definitions** (add/edit/delete providers) | Provider config (`~/.agent-cli/providers.json`) |
+>
+> **Use `agent setup`** when you need to add or check API keys for providers.
+> **Use `agent config`** when you need to add custom providers, edit provider settings, or enable/disable providers.
+
 ## Keyboard Shortcuts
 
 ### Navigation
