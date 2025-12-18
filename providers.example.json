@@ -100,7 +100,9 @@
       "envVars": {},
       "command": "codex",
       "validation": { "type": "command", "command": "codex" },
-      "updateCmd": ["npm", "update", "-g", "@openai/codex"]
+      "updateCmd": ["npm", "update", "-g", "@openai/codex"],
+      "skipPermissionsArg": "--full-auto",
+      "continueArg": "resume --last"
     },
     {
       "id": "vibe",
@@ -113,7 +115,9 @@
       "envVars": {},
       "command": "vibe",
       "validation": { "type": "command", "command": "vibe" },
-      "updateCmd": ["npm", "update", "-g", "vibe-cli"]
+      "updateCmd": ["npm", "update", "-g", "vibe-cli"],
+      "skipPermissionsArg": "--auto-approve",
+      "continueArg": "--continue"
     },
     {
       "id": "opencode",
@@ -126,7 +130,8 @@
       "envVars": {},
       "command": "opencode",
       "validation": { "type": "command", "command": "opencode" },
-      "updateCmd": ["opencode", "upgrade"]
+      "updateCmd": ["opencode", "upgrade"],
+      "continueArg": "--continue"
     },
     {
       "id": "gemini",
@@ -139,7 +144,9 @@
       "envVars": {},
       "command": "gemini",
       "validation": { "type": "command", "command": "gemini" },
-      "updateCmd": ["npm", "update", "-g", "@anthropic-ai/claude-code"]
+      "updateCmd": ["npm", "update", "-g", "@google/gemini-cli"],
+      "skipPermissionsArg": "--yolo",
+      "continueArg": "--continue"
     },
     {
       "id": "kilo",
@@ -152,7 +159,9 @@
       "envVars": {},
       "command": "kilo",
       "validation": { "type": "command", "command": "kilo" },
-      "updateCmd": ["npm", "update", "-g", "kilocode"]
+      "updateCmd": ["npm", "update", "-g", "kilocode"],
+      "skipPermissionsArg": "--yolo",
+      "continueArg": "--continue"
     },
     {
       "id": "qwen",
@@ -165,7 +174,9 @@
       "envVars": {},
       "command": "qwen",
       "validation": { "type": "command", "command": "qwen" },
-      "updateCmd": ["npm", "update", "-g", "@anthropic-ai/claude-code"]
+      "updateCmd": ["npm", "update", "-g", "@anthropic-ai/qwen-code"],
+      "skipPermissionsArg": "--yolo",
+      "continueArg": "--continue"
     }
   ],
   "disabled": [],

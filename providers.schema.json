@@ -111,6 +111,14 @@
           "items": {
             "type": "string"
           }
+        },
+        "skipPermissionsArg": {
+          "type": "string",
+          "description": "Argument for skip-permissions mode (e.g., '--full-auto' for Codex, '-y' for Gemini). If not set, skip-permissions is not passed to standalone CLIs."
+        },
+        "continueArg": {
+          "type": "string",
+          "description": "Argument for continue/resume session mode (e.g., '--continue' for Claude, '--resume' for others). If not set, continue is not passed to standalone CLIs."
         }
       },
       "required": ["id", "name", "description", "type", "category", "configDir", "envVars", "validation"],
@@ -131,7 +139,9 @@
         "validation": { "$ref": "#/definitions/Validation" },
         "command": { "type": "string" },
         "defaultArgs": { "type": "array", "items": { "type": "string" } },
-        "updateCmd": { "type": "array", "items": { "type": "string" } }
+        "updateCmd": { "type": "array", "items": { "type": "string" } },
+        "skipPermissionsArg": { "type": "string" },
+        "continueArg": { "type": "string" }
       },
       "additionalProperties": false
     },

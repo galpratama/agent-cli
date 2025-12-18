@@ -154,7 +154,7 @@ export async function launchClaude(options: LaunchOptions): Promise<void> {
 
   // For standalone providers (codex, vibe, opencode), launch directly
   if (provider.type === "standalone" && provider.command) {
-    return launchStandalone(provider, args, debug, fallback, triedProviders);
+    return launchStandalone(provider, args, debug, continueSession, skipPermissions, fallback, triedProviders);
   }
 
   // Create fake security path for Claude-based providers
@@ -255,11 +255,23 @@ async function launchStandalone(
   provider: Provider,
   args: string[],
   debug: boolean,
+  continueSession: boolean = false,
+  skipPermissions: boolean = false,
   fallback: boolean = false,
   triedProviders: string[] = []
 ): Promise<void> {
   const command = provider.command!;
   const finalArgs = [...(provider.defaultArgs || []), ...args];
+
+  // Add continue/resume flag if requested and provider supports it
+  if (continueSession && provider.continueArg) {
+    finalArgs.unshift(provider.continueArg);
+  }
+
+  // Add skip-permissions flag if requested and provider supports it
+  if (skipPermissions && provider.skipPermissionsArg) {
+    finalArgs.unshift(provider.skipPermissionsArg);
+  }
 
   if (debug) {
     console.log("\n=== DEBUG: Standalone Command ===");
@@ -285,6 +297,8 @@ async function launchStandalone(
           nextProvider,
           args,
           debug,
+          continueSession,
+          skipPermissions,
           true,
           [...triedProviders, nextProvider.id]
         );

@@ -65,4 +65,8 @@ export interface Provider {
   defaultArgs?: string[];
   /** Update command for standalone providers: [command, ...args] */
   updateCmd?: string[];
+  /** Argument for skip-permissions mode (e.g., "--full-auto" for Codex, "-y" for Gemini) */
+  skipPermissionsArg?: string;
+  /** Argument for continue/resume session mode (e.g., "--continue" for Claude, "--resume" for others) */
+  continueArg?: string;
 }

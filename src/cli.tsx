@@ -64,10 +64,10 @@ const program = new Command();
 program
   .name("agent")
   .description("AI Agent CLI - Launch Claude with multiple providers")
-  .version("1.1.3")
+  .version("1.1.4")
   .option("-d, --debug", "Show debug information")
   .option("-c, --continue", "Resume the last Claude session")
-  .option("-y, --dangerously-skip-permissions", "Skip permission prompts (Claude only)")
+  .option("-y, --dangerously-skip-permissions", "Skip permission prompts (auto-approve mode)")
   .option("-f, --fallback", "Auto-fallback to next provider on failure")
   .argument("[provider]", "Provider to use (skip selection)")
   .argument("[args...]", "Arguments to pass to the AI CLI")

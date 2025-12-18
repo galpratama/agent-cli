@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.4] - 2025-12-18
+
+### Added
+
+- **Skip-permissions support for standalone CLIs** - The `-y, --dangerously-skip-permissions` flag now works with standalone AI CLIs, not just Claude:
+  - **Codex**: `--full-auto` (sandboxed automatic execution)
+  - **Gemini**: `--yolo` (auto-approve all actions)
+  - **Vibe**: `--auto-approve` (auto-approve tool executions)
+  - **Kilo**: `--yolo` (auto-approve tool permissions)
+  - **Qwen**: `--yolo` (auto-approve all actions)
+- **Continue/resume support for standalone CLIs** - The `-c, --continue` flag now works with standalone CLIs:
+  - All standalone CLIs now have `continueArg` configured
+  - Codex uses `resume --last`, others use `--continue`
+
+### Changed
+
+- Updated CLI help text: `-y` flag description changed from "Claude only" to "auto-approve mode"
+- Fixed Gemini update command to use correct package `@google/gemini-cli`
+- Fixed Qwen update command to use correct package `@anthropic-ai/qwen-code`
+
 ## [1.1.3] - 2025-12-18
 
 ### Fixed
