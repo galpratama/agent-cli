@@ -5,6 +5,31 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.5] - 2025-12-19
+
+### Added
+
+- **Fullscreen TUI mode** - The interactive UI now uses the terminal's alternate screen buffer for a true fullscreen experience
+- **Responsive terminal resizing** - UI adapts dynamically when the terminal window is resized
+- **Update command for Claude** - Claude provider now supports `u` key to run `claude update`
+- **Universal update support** - Any provider with `updateCmd` configured can now be updated (not just standalone CLIs)
+
+### Fixed
+
+- **Virtual scrolling display issues** - Scroll indicators now have reserved space, preventing items from being hidden
+- **Empty updateCmd crash** - Fixed `ERR_INVALID_ARG_TYPE` error when pressing `u` on providers with empty `updateCmd` array
+- **Help/details overlay keyboard handling** - Any key now closes overlays (more intuitive UX)
+
+### Changed
+
+- **Simplified keyboard shortcuts** - Removed `T` (group by category) and `C` (copy ID) shortcuts that weren't working well with virtual scrolling
+- **Footer layout** - Reordered shortcuts to show Update (`u`) after Refresh (`r`)
+
+### Removed
+
+- **Group by category feature** - Inline category headers broke virtual scrolling layout; sort by category still works via `s` key
+- **Copy ID shortcut** - Removed `C` shortcut and clipboard functionality
+
 ## [1.1.4] - 2025-12-18
 
 ### Added
