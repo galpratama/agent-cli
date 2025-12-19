@@ -56,6 +56,9 @@ export function Footer({ showHelp = true }: FooterProps): React.ReactElement {
         <Text color="gray">
           <Text color="cyan">r</Text> Refresh
         </Text>
+        <Text color="gray">
+          <Text color="cyan">u</Text> Update
+        </Text>
       </Box>
       <Box gap={2}>
         <Text color="gray">
@@ -63,15 +66,6 @@ export function Footer({ showHelp = true }: FooterProps): React.ReactElement {
         </Text>
         <Text color="gray">
           <Text color="cyan">y</Text> --skip-perms
-        </Text>
-        <Text color="gray">
-          <Text color="cyan">T</Text> Group
-        </Text>
-        <Text color="gray">
-          <Text color="cyan">u</Text> Update
-        </Text>
-        <Text color="gray">
-          <Text color="cyan">C</Text> Copy ID
         </Text>
       </Box>
       <Box marginTop={1} gap={2}>

@@ -115,7 +115,11 @@ program
     }
 
     // Otherwise show interactive UI
-    render(
+    // Clear terminal and use alternate screen buffer for fullscreen experience
+    process.stdout.write("\x1b[?1049h"); // Switch to alternate screen buffer
+    process.stdout.write("\x1b[H");      // Move cursor to home position
+
+    const instance = render(
       <App
         args={args || []}
         debug={debug}
@@ -124,6 +128,11 @@ program
         fallback={fallback}
       />
     );
+
+    // Restore main screen buffer when app exits
+    instance.waitUntilExit().then(() => {
+      process.stdout.write("\x1b[?1049l"); // Switch back to main screen buffer
+    });
   });
 
 program
@@ -690,7 +699,15 @@ program
   .command("config")
   .description("Interactive TUI for managing provider configuration")
   .action(() => {
-    render(<ProviderConfigApp />);
+    // Clear terminal and use alternate screen buffer for fullscreen experience
+    process.stdout.write("\x1b[?1049h");
+    process.stdout.write("\x1b[H");
+
+    const instance = render(<ProviderConfigApp />);
+
+    instance.waitUntilExit().then(() => {
+      process.stdout.write("\x1b[?1049l");
+    });
   });
 
 // ==================== SETUP WIZARD ====================

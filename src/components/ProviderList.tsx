@@ -14,13 +14,12 @@
  * - Aliases, tags, pinning
  * - Quick refresh (r)
  * - Quick config (e)
- * - Copy to clipboard (C)
  */
 
 import React, { useState, useEffect, useCallback, useMemo } from "react";
-import { Box, Text, useInput, useApp } from "ink";
+import { Box, Text, useInput, useApp, useStdout } from "ink";
 import Spinner from "ink-spinner";
-import { spawn, spawnSync } from "child_process";
+import { spawn } from "child_process";
 import { Provider, ProviderCategory, CATEGORY_LABELS } from "../lib/providers.js";
 import { getAllProviders } from "../lib/provider-config.js";
 import { validateAllProviders, ValidationResult, clearValidationCache } from "../lib/validate.js";
@@ -106,7 +105,6 @@ export function ProviderList({
   const [updateMessage, setUpdateMessage] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearching, setIsSearching] = useState(false);
-  const [groupByCategory, setGroupByCategory] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
   const [sortMode, setSortMode] = useState<SortMode>("name");
@@ -114,6 +112,34 @@ export function ProviderList({
   const [showOnlyValid, setShowOnlyValid] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [isValidating, setIsValidating] = useState(true);
+  const [scrollOffset, setScrollOffset] = useState(0);
+  const [terminalHeight, setTerminalHeight] = useState(process.stdout.rows ?? 24);
+
+  // Get terminal dimensions for scrollable list
+  const { stdout } = useStdout();
+
+  // Listen for terminal resize events
+  useEffect(() => {
+    const handleResize = () => {
+      setTerminalHeight(stdout?.rows ?? process.stdout.rows ?? 24);
+    };
+
+    // Initial size
+    handleResize();
+
+    // Listen for resize
+    stdout?.on("resize", handleResize);
+    process.stdout.on("resize", handleResize);
+
+    return () => {
+      stdout?.off("resize", handleResize);
+      process.stdout.off("resize", handleResize);
+    };
+  }, [stdout]);
+
+  // Reserve lines for: Header (~10) + Footer (~10) + status bar (2) + search bar (2) + box border (2) + buffer (2) = ~28
+  const RESERVED_LINES = 28;
+  const LIST_HEIGHT = Math.max(5, terminalHeight - RESERVED_LINES);
 
   const lastProvider = getLastProvider();
   const usageStats = getUsageStats();
@@ -226,6 +252,28 @@ export function ProviderList({
     }
   }, [filteredProviders.length, selectedIndex]);
 
+  // Keep scroll offset synchronized with selection (virtual scrolling)
+  useEffect(() => {
+    if (selectedIndex < scrollOffset) {
+      setScrollOffset(selectedIndex);
+    } else if (selectedIndex >= scrollOffset + LIST_HEIGHT) {
+      setScrollOffset(selectedIndex - LIST_HEIGHT + 1);
+    }
+  }, [selectedIndex, scrollOffset, LIST_HEIGHT]);
+
+  // Clamp scroll offset when terminal resizes or list shrinks
+  useEffect(() => {
+    const maxOffset = Math.max(0, filteredProviders.length - LIST_HEIGHT);
+    if (scrollOffset > maxOffset) {
+      setScrollOffset(maxOffset);
+    }
+  }, [LIST_HEIGHT, filteredProviders.length, scrollOffset]);
+
+  // Reset scroll offset when filters change
+  useEffect(() => {
+    setScrollOffset(0);
+  }, [searchQuery, categoryFilter, showOnlyValid]);
+
   // Validate providers on mount
   useEffect(() => {
     setIsValidating(true);
@@ -253,26 +301,9 @@ export function ProviderList({
     });
   }, [allProviders, showStatus]);
 
-  // Copy to clipboard using spawnSync (safe from injection)
-  const copyToClipboard = useCallback((text: string) => {
-    try {
-      // Use pbcopy on macOS, xclip on Linux
-      const cmd = process.platform === "darwin" ? "pbcopy" : "xclip";
-      const args = process.platform === "darwin" ? [] : ["-selection", "clipboard"];
-      const result = spawnSync(cmd, args, { input: text, encoding: "utf-8" });
-      if (result.status === 0) {
-        showStatus(`Copied: ${text}`);
-      } else {
-        showStatus("Failed to copy to clipboard");
-      }
-    } catch {
-      showStatus("Failed to copy to clipboard");
-    }
-  }, [showStatus]);
-
   // Handle update for standalone providers
   const handleUpdate = useCallback((provider: Provider) => {
-    if (!provider.updateCmd || updating) return;
+    if (!provider.updateCmd || provider.updateCmd.length === 0 || updating) return;
 
     setUpdating(provider.id);
     setUpdateMessage(null);
@@ -297,19 +328,26 @@ export function ProviderList({
     });
   }, [updating]);
 
-  // Handle mouse events (scroll only, click disabled)
+  // Calculate box boundaries for mouse scroll detection
+  const boxTopLine = HEADER_OFFSET + 3;
+  const boxBottomLine = boxTopLine + LIST_HEIGHT + 2;
+
+  // Handle mouse events (scroll only within box)
   const handleMouse = useCallback((event: MouseEvent) => {
     if (showHelp || showDetails) return;
 
-    // Only handle scroll events
     if (event.type === "scroll") {
-      if (event.button === "wheelUp") {
-        setSelectedIndex((prev) => prev > 0 ? prev - 1 : filteredProviders.length - 1);
-      } else if (event.button === "wheelDown") {
-        setSelectedIndex((prev) => prev < filteredProviders.length - 1 ? prev + 1 : 0);
+      const mouseY = event.y;
+      // Only scroll when mouse is inside the box area
+      if (mouseY >= boxTopLine && mouseY <= boxBottomLine) {
+        if (event.button === "wheelUp") {
+          setSelectedIndex((prev) => prev > 0 ? prev - 1 : filteredProviders.length - 1);
+        } else if (event.button === "wheelDown") {
+          setSelectedIndex((prev) => prev < filteredProviders.length - 1 ? prev + 1 : 0);
+        }
       }
     }
-  }, [filteredProviders.length, showHelp, showDetails]);
+  }, [filteredProviders.length, showHelp, showDetails, boxTopLine, boxBottomLine]);
 
   // Enable mouse support
   useMouse({ onMouse: handleMouse });
@@ -327,19 +365,15 @@ export function ProviderList({
   useInput((input, key) => {
     // Help overlay takes priority
     if (showHelp) {
-      // Handle escape key (key.escape or raw escape character \x1b)
-      if (key.escape || input === "\x1b" || input === "?" || key.return || input === "q") {
-        setShowHelp(false);
-      }
+      // Any key closes help overlay
+      setShowHelp(false);
       return;
     }
 
     // Details panel
     if (showDetails) {
-      // Handle escape key (key.escape or raw escape character \x1b)
-      if (key.escape || input === "\x1b" || input === "i" || key.return || input === "q") {
-        setShowDetails(false);
-      }
+      // Any key closes details panel
+      setShowDetails(false);
       return;
     }
 
@@ -443,11 +477,37 @@ export function ProviderList({
     }
     // Toggle continue mode
     else if (input === "c") {
-      setContinueMode((prev) => !prev);
+      const newMode = !continueMode;
+      setContinueMode(newMode);
+      const selected = filteredProviders[selectedIndex];
+      if (newMode && selected) {
+        // Check if provider supports continue mode
+        const supportsIt = selected.type === "api" || selected.continueArg;
+        if (!supportsIt) {
+          showStatus(`--continue enabled (${selected.name} may not support it)`);
+        } else {
+          showStatus("--continue enabled");
+        }
+      } else {
+        showStatus("--continue disabled");
+      }
     }
     // Toggle skip permissions mode
     else if (input === "y") {
-      setSkipPermsMode((prev) => !prev);
+      const newMode = !skipPermsMode;
+      setSkipPermsMode(newMode);
+      const selected = filteredProviders[selectedIndex];
+      if (newMode && selected) {
+        // Check if provider supports skip-permissions mode
+        const supportsIt = selected.type === "api" || selected.skipPermissionsArg;
+        if (!supportsIt) {
+          showStatus(`--skip-perms enabled (${selected.name} may not support it)`);
+        } else {
+          showStatus("--skip-perms enabled");
+        }
+      } else {
+        showStatus("--skip-perms disabled");
+      }
     }
     // Go to first item
     else if (input === "g") {
@@ -457,17 +517,16 @@ export function ProviderList({
     else if (input === "G") {
       setSelectedIndex(filteredProviders.length - 1);
     }
-    // Update selected provider (standalone only)
+    // Update selected provider (any provider with updateCmd configured)
     else if (input === "u") {
       const selected = filteredProviders[selectedIndex];
-      if (selected && selected.type === "standalone" && selected.updateCmd) {
+      if (!selected) return;
+
+      if (!selected.updateCmd || selected.updateCmd.length === 0) {
+        showStatus(`${selected.name} doesn't have update command configured`);
+      } else {
         handleUpdate(selected);
       }
-    }
-    // Toggle group by category
-    else if (input === "T") {
-      setGroupByCategory((prev) => !prev);
-      setSelectedIndex(0);
     }
     // Toggle show only valid
     else if (input === "v") {
@@ -486,13 +545,6 @@ export function ProviderList({
     // Open config (if handler provided)
     else if (input === "e" && onOpenConfig) {
       onOpenConfig();
-    }
-    // Copy provider ID to clipboard
-    else if (input === "C") {
-      const selected = filteredProviders[selectedIndex];
-      if (selected) {
-        copyToClipboard(selected.id);
-      }
     }
     // Quit
     else if (input === "q") {
@@ -523,14 +575,12 @@ export function ProviderList({
           <Text><Text color="cyan">Organization</Text></Text>
           <Text dimColor>  f           Toggle favorite</Text>
           <Text dimColor>  s           Cycle sort mode</Text>
-          <Text dimColor>  T           Toggle category groups</Text>
           <Text></Text>
           <Text><Text color="cyan">Actions</Text></Text>
           <Text dimColor>  i           Show provider details</Text>
           <Text dimColor>  r           Refresh validation</Text>
-          <Text dimColor>  u           Update (standalone)</Text>
+          <Text dimColor>  u           Update provider</Text>
           <Text dimColor>  e           Open config TUI</Text>
-          <Text dimColor>  C           Copy provider ID</Text>
           <Text></Text>
           <Text><Text color="cyan">Modes</Text></Text>
           <Text dimColor>  c           Toggle --continue</Text>
@@ -635,31 +685,33 @@ export function ProviderList({
         </Box>
       )}
 
-      {/* Category view indicator */}
-      {groupByCategory && !searchQuery && (
-        <Box marginBottom={1}>
-          <Text color="magenta" bold>◆ Grouped by Category</Text>
+      {/* Scrollable provider list with box border */}
+      <Box
+        flexDirection="column"
+        borderStyle="round"
+        borderColor="gray"
+        paddingX={1}
+        height={LIST_HEIGHT + 4}
+      >
+        {/* Scroll indicator - top (always reserves space) */}
+        <Box justifyContent="center" height={1}>
+          {scrollOffset > 0 ? (
+            <Text color="gray">▲ {scrollOffset} more above</Text>
+          ) : (
+            <Text> </Text>
+          )}
         </Box>
-      )}
 
-      {/* Render providers, with category headers if grouped */}
-      {(() => {
-        let lastCat: ProviderCategory | null = null;
-        let providerIndex = 0;
+        {/* Render visible providers only (virtual scrolling) */}
+        {(() => {
+          let providerIndex = 0;
+          const visibleProviders = filteredProviders.slice(scrollOffset, scrollOffset + LIST_HEIGHT);
 
-        return filteredProviders.map((provider) => {
-          const currentIndex = providerIndex++;
-          const showHeader = groupByCategory && !searchQuery && provider.category !== lastCat;
-          lastCat = provider.category;
-          const stats = usageStats[provider.id];
-          return (
-            <React.Fragment key={provider.id}>
-              {showHeader && (
-                <Box marginTop={currentIndex > 0 ? 1 : 0} marginBottom={0}>
-                  <Text color="gray" dimColor>── {CATEGORY_LABELS[provider.category]} ──</Text>
-                </Box>
-              )}
-              <Box>
+          return visibleProviders.map((provider) => {
+            const currentIndex = scrollOffset + providerIndex++;
+            const stats = usageStats[provider.id];
+            return (
+              <Box key={provider.id}>
                 <ProviderItem
                   provider={provider}
                   index={currentIndex}
@@ -674,18 +726,27 @@ export function ProviderList({
                   <Text dimColor> ({stats.count})</Text>
                 )}
               </Box>
-            </React.Fragment>
-          );
-        });
-      })()}
+            );
+          });
+        })()}
 
-      {filteredProviders.length === 0 && (
-        <Box>
-          <Text color="gray">
-            {searchQuery ? `No providers match "${searchQuery}"` : "No providers available"}
-          </Text>
+        {filteredProviders.length === 0 && (
+          <Box>
+            <Text color="gray">
+              {searchQuery ? `No providers match "${searchQuery}"` : "No providers available"}
+            </Text>
+          </Box>
+        )}
+
+        {/* Scroll indicator - bottom (always reserves space) */}
+        <Box justifyContent="center" height={1}>
+          {scrollOffset + LIST_HEIGHT < filteredProviders.length ? (
+            <Text color="gray">▼ {filteredProviders.length - scrollOffset - LIST_HEIGHT} more below</Text>
+          ) : (
+            <Text> </Text>
+          )}
         </Box>
-      )}
+      </Box>
 
       {/* Mode indicators */}
       {(continueMode || skipPermsMode) && (

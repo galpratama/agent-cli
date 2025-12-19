@@ -11,7 +11,8 @@
       "category": "anthropic",
       "configDir": "~/.claude",
       "envVars": {},
-      "validation": { "type": "env" }
+      "validation": { "type": "env" },
+      "updateCmd": ["claude", "update"]
     },
     {
       "id": "foundry-azure",
@@ -176,6 +177,24 @@
       "validation": { "type": "command", "command": "qwen" },
       "updateCmd": ["npm", "update", "-g", "@anthropic-ai/qwen-code"],
       "skipPermissionsArg": "--yolo",
+      "continueArg": "--continue"
+    },
+    {
+      "id": "codebuff",
+      "name": "Codebuff CLI",
+      "description": "Yet another AI Agent",
+      "icon": "",
+      "type": "standalone",
+      "category": "standalone",
+      "configDir": "~/.codebuff",
+      "envVars": {},
+      "command": "codebuff",
+      "validation": {
+        "type": "command",
+        "command": "codebuff"
+      },
+      "updateCmd": [],
+      "skipPermissionsArg": "",
       "continueArg": "--continue"
     }
   ],
