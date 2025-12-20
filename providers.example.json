@@ -29,7 +29,15 @@
         "OPENROUTER_API_KEY": "ANTHROPIC_API_KEY"
       },
       "validation": { "type": "env", "envKey": "OPENROUTER_API_KEY" },
-      "updateCmd": ["claude", "update"]
+      "updateCmd": ["claude", "update"],
+      "models": [
+        "mistralai/devstral-2512:free",
+        "kwaipilot/kat-coder-pro:free",
+        "z-ai/glm-4.5-air:free",
+        "mistralai/devstral-2512:free",
+        "qwen/qwen3-coder:free",
+        "openai/gpt-oss-20b:free"
+      ]
     },
     {
       "id": "megallm",
