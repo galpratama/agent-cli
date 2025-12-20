@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2025-12-20
+
+### Added
+
+- **Multi-model provider support** - Providers can now define multiple models that users can select before launching
+  - New `models` array field in provider configuration for listing available models
+  - New `modelEnvVar` field to specify which environment variable controls model selection
+  - Interactive model picker UI appears after selecting a multi-model provider
+  - Last used model is remembered per provider and auto-selected on next launch
+  - Keyboard navigation in model picker: arrows/vim keys, fuzzy search (`/`), Esc to go back
+- **MegaLLM models** - Added 16 models to MegaLLM provider including DeepSeek, Qwen, Llama, Mistral, and more
+
+### Changed
+
+- App state machine now includes `selecting-model` state for the two-step provider → model flow
+- Launcher now accepts optional `model` parameter and sets the appropriate environment variable
+
 ## [1.1.5] - 2025-12-19
 
 ### Added

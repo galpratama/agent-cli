@@ -48,6 +48,8 @@ interface ConfigSchema {
   pinnedProviders: string[];
   aliases: ProviderAlias[];
   providerTags: ProviderTag[];
+  /** Last selected model per provider (for multi-model providers) */
+  lastModelByProvider: Record<string, string>;
 }
 
 const config = new Conf<ConfigSchema>({
@@ -62,6 +64,7 @@ const config = new Conf<ConfigSchema>({
     pinnedProviders: [],
     aliases: [],
     providerTags: [],
+    lastModelByProvider: {},
   },
 });
 
@@ -258,6 +261,20 @@ export function getProvidersByTag(tag: string): string[] {
   return config.get("providerTags")
     .filter((pt) => pt.tags.includes(tag))
     .map((pt) => pt.providerId);
+}
+
+// Model Preferences (for multi-model providers)
+export function getLastModelForProvider(providerId: string): string | undefined {
+  const lastModels = config.get("lastModelByProvider");
+  return lastModels[providerId];
+}
+
+export function setLastModelForProvider(providerId: string, model: string): void {
+  const lastModels = config.get("lastModelByProvider");
+  config.set("lastModelByProvider", {
+    ...lastModels,
+    [providerId]: model,
+  });
 }
 
 export { config };

@@ -30,6 +30,7 @@ Managing multiple AI CLI tools is painful. Each provider has its own command, co
 ## Features
 
 - **Multi-Provider Support** - Claude, GLM, Kimi, MiniMax, Codex, Gemini, and more
+- **Multi-Model Selection** - Choose from multiple models for providers like MegaLLM
 - **Interactive TUI** - Beautiful interface with gradient colors and ASCII art
 - **Keyboard Shortcuts** - Vim-style navigation, quick number selection
 - **Mouse Support** - Scroll to navigate
@@ -318,6 +319,37 @@ agent setup
 | `command`     | string | Command to run (standalone providers)                |
 | `defaultArgs` | array  | Default arguments for command                        |
 | `updateCmd`   | array  | Update command for standalone providers              |
+| `models`      | array  | Available models for multi-model providers           |
+| `modelEnvVar` | string | Environment variable to set selected model           |
+
+### Multi-Model Providers
+
+Some providers support multiple models. When you select such a provider, a model picker appears allowing you to choose which model to use.
+
+```json
+{
+  "id": "megallm",
+  "name": "MegaLLM",
+  "type": "api",
+  "models": [
+    "deepseek-v3.2",
+    "qwen3-coder-480b-a35b-instruct",
+    "llama3.3-70b-instruct",
+    "mistral-large-3-675b-instruct-2512"
+  ],
+  "modelEnvVar": "ANTHROPIC_MODEL"
+}
+```
+
+- **`models`** - Array of model identifiers available for this provider
+- **`modelEnvVar`** - The environment variable that will be set with the selected model
+
+The model picker supports:
+- Keyboard navigation (arrows, `j`/`k`)
+- Fuzzy search (`/`)
+- Quick select by number (`1-9`, `0`)
+- Go back to provider list (`Esc`)
+- Last used model is remembered and auto-selected
 
 ### Validation Types
 

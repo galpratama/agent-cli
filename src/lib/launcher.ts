@@ -31,6 +31,8 @@ export interface LaunchOptions {
   fallback?: boolean;
   /** Internal: providers already tried (to prevent infinite loops) */
   triedProviders?: string[];
+  /** Selected model for multi-model providers */
+  model?: string;
 }
 
 /**
@@ -75,7 +77,8 @@ exit 1
  */
 function buildEnv(
   provider: Provider,
-  tempDir: string | null
+  tempDir: string | null,
+  model?: string
 ): NodeJS.ProcessEnv {
   const env = { ...process.env };
 
@@ -102,6 +105,11 @@ function buildEnv(
         env[targetKey] = sourceValue;
       }
     }
+  }
+
+  // Apply selected model if provided and provider has modelEnvVar configured
+  if (model && provider.modelEnvVar) {
+    env[provider.modelEnvVar] = model;
   }
 
   // Prepend temp dir to PATH for fake security (macOS only)
@@ -150,6 +158,7 @@ export async function launchClaude(options: LaunchOptions): Promise<void> {
     skipPermissions = false,
     fallback = false,
     triedProviders = [provider.id],
+    model,
   } = options;
 
   // For standalone providers (codex, vibe, opencode), launch directly
@@ -160,8 +169,8 @@ export async function launchClaude(options: LaunchOptions): Promise<void> {
   // Create fake security path for Claude-based providers
   const tempDir = createFakeSecurityPath();
 
-  // Build environment
-  const env = buildEnv(provider, tempDir);
+  // Build environment (with optional model)
+  const env = buildEnv(provider, tempDir, model);
 
   // Build final args with flags
   const finalArgs = [...args];

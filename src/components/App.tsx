@@ -8,8 +8,10 @@ import { Box, Text, useApp } from "ink";
 import { Header } from "./Header.js";
 import { Footer } from "./Footer.js";
 import { ProviderList } from "./ProviderList.js";
+import { ModelPicker } from "./ModelPicker.js";
 import { Provider } from "../lib/providers.js";
 import { launchClaude } from "../lib/launcher.js";
+import { setLastModelForProvider } from "../lib/config.js";
 
 interface AppProps {
   args?: string[];
@@ -19,7 +21,12 @@ interface AppProps {
   fallback?: boolean;
 }
 
-type AppState = "selecting" | "launching" | "launched";
+type AppState = "selecting" | "selecting-model" | "launching" | "launched";
+
+interface LaunchOptions {
+  continueSession?: boolean;
+  skipPermissions?: boolean;
+}
 
 export function App({
   args = [],
@@ -33,12 +40,15 @@ export function App({
   const [selectedProvider, setSelectedProvider] = useState<Provider | null>(
     null
   );
+  const [selectedModel, setSelectedModel] = useState<string | null>(null);
+  const [launchOptions, setLaunchOptions] = useState<LaunchOptions>({});
 
-  const handleSelect = async (
+  // Launch the provider with optional model
+  const doLaunch = async (
     provider: Provider,
-    options?: { continueSession?: boolean; skipPermissions?: boolean }
+    model: string | null,
+    options: LaunchOptions
   ) => {
-    setSelectedProvider(provider);
     setState("launching");
 
     // Merge options from props and from keyboard shortcuts
@@ -52,7 +62,7 @@ export function App({
         // Exit Ink before launching Claude (it takes over the terminal)
         exit();
 
-        // Launch Claude with the selected provider
+        // Launch Claude with the selected provider and model
         await launchClaude({
           provider,
           args,
@@ -60,6 +70,7 @@ export function App({
           continueSession: finalContinue,
           skipPermissions: finalSkipPerms,
           fallback,
+          model: model ?? undefined,
         });
       } catch (error) {
         console.error("Failed to launch:", error);
@@ -68,13 +79,60 @@ export function App({
     }, 100);
   };
 
+  const handleSelect = async (
+    provider: Provider,
+    options?: { continueSession?: boolean; skipPermissions?: boolean }
+  ) => {
+    setSelectedProvider(provider);
+    setLaunchOptions(options || {});
+
+    // If provider has multiple models, show model picker
+    if (provider.models && provider.models.length > 0) {
+      setState("selecting-model");
+    } else {
+      // No models to select, launch directly
+      doLaunch(provider, null, options || {});
+    }
+  };
+
+  const handleModelSelect = (model: string) => {
+    if (!selectedProvider) return;
+
+    setSelectedModel(model);
+    // Save the selected model for next time
+    setLastModelForProvider(selectedProvider.id, model);
+    // Launch with the selected model
+    doLaunch(selectedProvider, model, launchOptions);
+  };
+
+  const handleModelBack = () => {
+    // Go back to provider selection
+    setState("selecting");
+    setSelectedProvider(null);
+    setSelectedModel(null);
+  };
+
+  if (state === "selecting-model" && selectedProvider) {
+    return (
+      <Box flexDirection="column">
+        <Header subtitle={`Select a model for ${selectedProvider.name}`} />
+        <ModelPicker
+          provider={selectedProvider}
+          onSelect={handleModelSelect}
+          onBack={handleModelBack}
+        />
+      </Box>
+    );
+  }
+
   if (state === "launching") {
     return (
       <Box flexDirection="column">
         <Header />
         <Box>
           <Text color="yellow">
-            🚀 Launching {selectedProvider?.name}...
+            Launching {selectedProvider?.name}
+            {selectedModel && ` (${selectedModel})`}...
           </Text>
         </Box>
       </Box>
@@ -85,7 +143,8 @@ export function App({
     return (
       <Box>
         <Text color="green">
-          ✓ Started {selectedProvider?.name}
+          Started {selectedProvider?.name}
+          {selectedModel && ` (${selectedModel})`}
         </Text>
       </Box>
     );

@@ -69,4 +69,8 @@ export interface Provider {
   skipPermissionsArg?: string;
   /** Argument for continue/resume session mode (e.g., "--continue" for Claude, "--resume" for others) */
   continueArg?: string;
+  /** Available models for this provider (if multiple models are supported) */
+  models?: string[];
+  /** Environment variable to set the selected model (e.g., "ANTHROPIC_MODEL") */
+  modelEnvVar?: string;
 }

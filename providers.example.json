@@ -15,6 +15,60 @@
       "updateCmd": ["claude", "update"]
     },
     {
+      "id": "openrouter",
+      "name": "OpenRouter",
+      "description": "Access multiple AI models via OpenRouter",
+      "icon": "",
+      "type": "api",
+      "category": "openrouter",
+      "configDir": "~/.claude-openrouter",
+      "envVars": {
+        "ANTHROPIC_BASE_URL": "https://openrouter.ai/api",
+        "ANTHROPIC_API_KEY": ""
+      },
+      "envMappings": {
+        "OPENROUTER_API_KEY": "ANTHROPIC_AUTH_TOKEN"
+      },
+      "validation": { "type": "env", "envKey": "OPENROUTER_API_KEY" },
+      "updateCmd": ["claude", "update"]
+    },
+    {
+      "id": "megallm",
+      "name": "MegaLLM",
+      "description": "Access multiple AI models via MegaLLM",
+      "icon": "",
+      "type": "api",
+      "category": "megallm",
+      "configDir": "~/.claude-megallm",
+      "envVars": {
+        "ANTHROPIC_BASE_URL": "https://ai.megallm.io"
+      },
+      "envMappings": {
+        "MEGALLM_API_KEY": "ANTHROPIC_API_KEY"
+      },
+      "validation": { "type": "env", "envKey": "MEGALLM_API_KEY" },
+      "updateCmd": ["claude", "update"],
+      "models": [
+        "minimaxai/minimax-m2",
+        "moonshotai/kimi-k2-thinking",
+        "moonshotai/kimi-k2-instruct-0905",
+        "mistralai/mistral-nemotron",
+        "mistral-large-3-675b-instruct-2512",
+        "llama3-8b-instruct",
+        "llama3.3-70b-instruct",
+        "deepseek-r1-distill-llama-70b",
+        "deepseek-ai/deepseek-v3.1-terminus",
+        "deepseek-ai/deepseek-v3.1",
+        "deepseek-v3.2",
+        "qwen3-coder-480b-a35b-instruct",
+        "qwen/qwen3-next-80b-a3b-instruct",
+        "alibaba-qwen3-32b",
+        "openai-gpt-oss-20b",
+        "openai-gpt-oss-120b"
+      ],
+      "modelEnvVar": "ANTHROPIC_MODEL"
+    },
+    {
       "id": "foundry-azure",
       "name": "Foundry Azure",
       "description": "Anthropic Foundry (Azure-hosted)",
