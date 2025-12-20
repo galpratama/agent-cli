@@ -23,11 +23,10 @@
       "category": "openrouter",
       "configDir": "~/.claude-openrouter",
       "envVars": {
-        "ANTHROPIC_BASE_URL": "https://openrouter.ai/api",
-        "ANTHROPIC_API_KEY": ""
+        "ANTHROPIC_BASE_URL": "https://openrouter.ai/api"
       },
       "envMappings": {
-        "OPENROUTER_API_KEY": "ANTHROPIC_AUTH_TOKEN"
+        "OPENROUTER_API_KEY": "ANTHROPIC_API_KEY"
       },
       "validation": { "type": "env", "envKey": "OPENROUTER_API_KEY" },
       "updateCmd": ["claude", "update"]

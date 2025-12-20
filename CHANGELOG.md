@@ -16,11 +16,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Last used model is remembered per provider and auto-selected on next launch
   - Keyboard navigation in model picker: arrows/vim keys, fuzzy search (`/`), Esc to go back
 - **MegaLLM models** - Added 16 models to MegaLLM provider including DeepSeek, Qwen, Llama, Mistral, and more
+- **OpenRouter provider** - Access multiple AI models via OpenRouter's unified API
+  - Uses `OPENROUTER_API_KEY` environment variable
+  - Maps to Claude CLI's authentication system
+- **MegaLLM provider** - Access various AI models with model selection support
+  - Uses `MEGALLM_API_KEY` environment variable
+  - Includes 16+ models: DeepSeek V3.2, Qwen 3 Coder, Llama 3.3, Mistral Large 3, and more
+- **New provider categories** - Added `openrouter` and `megallm` to category types and labels
 
 ### Changed
 
 - App state machine now includes `selecting-model` state for the two-step provider → model flow
 - Launcher now accepts optional `model` parameter and sets the appropriate environment variable
+- Provider schema updated to include all category types and new model-related fields
 
 ## [1.1.5] - 2025-12-19
 

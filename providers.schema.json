@@ -69,7 +69,24 @@
         "category": {
           "type": "string",
           "description": "Provider category for grouping",
-          "enum": ["anthropic", "chinese", "local", "standalone"]
+          "enum": [
+            "anthropic",
+            "openai",
+            "google",
+            "meta",
+            "mistral",
+            "cohere",
+            "chinese",
+            "azure",
+            "amazon",
+            "opensource",
+            "local",
+            "standalone",
+            "enterprise",
+            "openrouter",
+            "megallm",
+            "custom"
+          ]
         },
         "configDir": {
           "type": "string",
@@ -119,6 +136,17 @@
         "continueArg": {
           "type": "string",
           "description": "Argument for continue/resume session mode (e.g., '--continue' for Claude, '--resume' for others). If not set, continue is not passed to standalone CLIs."
+        },
+        "models": {
+          "type": "array",
+          "description": "Available models for this provider (if multiple models are supported)",
+          "items": {
+            "type": "string"
+          }
+        },
+        "modelEnvVar": {
+          "type": "string",
+          "description": "Environment variable to set the selected model (e.g., 'ANTHROPIC_MODEL')"
         }
       },
       "required": ["id", "name", "description", "type", "category", "configDir", "envVars", "validation"],
@@ -132,7 +160,24 @@
         "description": { "type": "string" },
         "icon": { "type": "string" },
         "type": { "type": "string", "enum": ["api", "proxy", "gateway", "standalone"] },
-        "category": { "type": "string", "enum": ["anthropic", "chinese", "local", "standalone"] },
+        "category": { "type": "string", "enum": [
+          "anthropic",
+          "openai",
+          "google",
+          "meta",
+          "mistral",
+          "cohere",
+          "chinese",
+          "azure",
+          "amazon",
+          "opensource",
+          "local",
+          "standalone",
+          "enterprise",
+          "openrouter",
+          "megallm",
+          "custom"
+        ] },
         "configDir": { "type": "string" },
         "envVars": { "type": "object", "additionalProperties": { "type": "string" } },
         "envMappings": { "type": "object", "additionalProperties": { "type": "string" } },
@@ -141,7 +186,9 @@
         "defaultArgs": { "type": "array", "items": { "type": "string" } },
         "updateCmd": { "type": "array", "items": { "type": "string" } },
         "skipPermissionsArg": { "type": "string" },
-        "continueArg": { "type": "string" }
+        "continueArg": { "type": "string" },
+        "models": { "type": "array", "items": { "type": "string" } },
+        "modelEnvVar": { "type": "string" }
       },
       "additionalProperties": false
     },

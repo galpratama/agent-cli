@@ -20,6 +20,8 @@ export type ProviderCategory =
   | "local"
   | "standalone"
   | "enterprise"
+  | "openrouter"
+  | "megallm"
   | "custom";
 
 export const CATEGORY_LABELS: Record<ProviderCategory, string> = {
@@ -36,6 +38,8 @@ export const CATEGORY_LABELS: Record<ProviderCategory, string> = {
   local: "Local / Self-hosted",
   standalone: "Standalone CLIs",
   enterprise: "Enterprise",
+  openrouter: "OpenRouter",
+  megallm: "MegaLLM",
   custom: "Custom",
 };
 

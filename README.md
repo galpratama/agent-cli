@@ -126,19 +126,21 @@ agent claude
 
 ## Supported Providers
 
-| Provider      | Type       | Category  | Description                    |
-| ------------- | ---------- | --------- | ------------------------------ |
-| Claude        | API        | Anthropic | Default Anthropic Claude       |
-| Foundry Azure | API        | Anthropic | Azure-hosted Anthropic Foundry |
-| GLM           | API        | Chinese   | GLM/Zhipu AI models (Z.ai)     |
-| Kimi          | API        | Chinese   | Kimi AI                        |
-| MiniMax       | API        | Chinese   | MiniMax AI models              |
-| Codex         | Standalone | CLI       | OpenAI Codex CLI               |
-| Vibe          | Standalone | CLI       | Mistral Devstral CLI           |
-| OpenCode      | Standalone | CLI       | OpenCode AI CLI                |
-| Gemini        | Standalone | CLI       | Google Gemini CLI              |
-| Kilo          | Standalone | CLI       | KiloCode CLI                   |
-| Qwen          | Standalone | CLI       | Alibaba Qwen CLI               |
+| Provider      | Type       | Category   | Description                              |
+| ------------- | ---------- | ---------- | ---------------------------------------- |
+| Claude        | API        | Anthropic  | Default Anthropic Claude                 |
+| OpenRouter    | API        | OpenRouter | Access multiple AI models via OpenRouter |
+| MegaLLM       | API        | MegaLLM    | Access multiple AI models via MegaLLM    |
+| Foundry Azure | API        | Anthropic  | Azure-hosted Anthropic Foundry           |
+| GLM           | API        | Chinese    | GLM/Zhipu AI models (Z.ai)               |
+| Kimi          | API        | Chinese    | Kimi AI                                  |
+| MiniMax       | API        | Chinese    | MiniMax AI models                        |
+| Codex         | Standalone | CLI        | OpenAI Codex CLI                         |
+| Vibe          | Standalone | CLI        | Mistral Devstral CLI                     |
+| OpenCode      | Standalone | CLI        | OpenCode AI CLI                          |
+| Gemini        | Standalone | CLI        | Google Gemini CLI                        |
+| Kilo          | Standalone | CLI        | KiloCode CLI                             |
+| Qwen          | Standalone | CLI        | Alibaba Qwen CLI                         |
 
 ## Commands
 
@@ -391,6 +393,39 @@ npm install -g @anthropic-ai/claude-code
 # Authenticate
 claude auth
 ```
+
+### OpenRouter
+
+OpenRouter provides access to multiple AI models through a unified API:
+
+```bash
+# Set your OpenRouter API key
+export OPENROUTER_API_KEY="your-api-key"
+
+# Launch
+agent openrouter
+```
+
+Get your API key from [OpenRouter](https://openrouter.ai/).
+
+### MegaLLM
+
+MegaLLM provides access to various AI models with model selection support:
+
+```bash
+# Set your MegaLLM API key
+export MEGALLM_API_KEY="your-api-key"
+
+# Launch (will show model picker)
+agent megallm
+```
+
+Supported models include:
+- DeepSeek V3.2
+- Qwen 3 Coder (480B)
+- Llama 3.3 (70B)
+- Mistral Large 3
+- And many more
 
 ### GLM (Z.ai)
 
