@@ -14,6 +14,7 @@ import { dirname, resolve } from "path";
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from "fs";
 import { homedir } from "os";
 import { App } from "./components/App.js";
+import { DirectLaunchApp } from "./components/DirectLaunchApp.js";
 import { ProviderConfigApp } from "./components/ProviderConfigApp.js";
 import { Provider } from "./lib/providers.js";
 import {
@@ -91,6 +92,23 @@ program
         process.exit(1);
       }
 
+      // If provider has multiple models, show model picker
+      if (provider.models && provider.models.length > 0) {
+        const instance = render(
+          <DirectLaunchApp
+            provider={provider}
+            args={args || []}
+            debug={debug}
+            continueSession={continueSession}
+            skipPermissions={skipPermissions}
+            fallback={fallback}
+          />
+        );
+        await instance.waitUntilExit();
+        return;
+      }
+
+      // No models, launch directly
       console.log(
         chalk.cyan(`> Launching ${provider.name}...`)
       );

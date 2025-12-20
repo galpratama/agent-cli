@@ -34,10 +34,10 @@
         "mistralai/devstral-2512:free",
         "kwaipilot/kat-coder-pro:free",
         "z-ai/glm-4.5-air:free",
-        "mistralai/devstral-2512:free",
         "qwen/qwen3-coder:free",
         "openai/gpt-oss-20b:free"
-      ]
+      ],
+      "modelEnvVar": "ANTHROPIC_MODEL"
     },
     {
       "id": "megallm",
@@ -67,7 +67,6 @@
         "deepseek-ai/deepseek-v3.1-terminus",
         "deepseek-ai/deepseek-v3.1",
         "deepseek-v3.2",
-        "qwen3-coder-480b-a35b-instruct",
         "qwen/qwen3-next-80b-a3b-instruct",
         "alibaba-qwen3-32b",
         "openai-gpt-oss-20b",
