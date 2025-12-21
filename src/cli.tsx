@@ -47,6 +47,18 @@ import {
   recordUsage,
   clearUsageStats,
   Profile,
+  getAliases,
+  setAlias,
+  removeAlias,
+  getProviderByAlias,
+  getAllTags,
+  getTagsForProvider,
+  addTagToProvider,
+  removeTagFromProvider,
+  getProvidersByTag,
+  getPinnedProviders,
+  togglePinned,
+  isPinned,
 } from "./lib/config.js";
 
 // Get the package directory
@@ -532,6 +544,217 @@ program
   });
 
 // ==================== UPDATE ALL ====================
+
+// ==================== ALIASES ====================
+
+program
+  .command("alias")
+  .description("Manage provider aliases")
+  .argument("[alias]", "Alias name")
+  .argument("[provider]", "Provider ID to alias (omit to show current)")
+  .option("-r, --remove", "Remove the alias")
+  .option("-l, --list", "List all aliases")
+  .action((aliasName?: string, providerId?: string, options?: { remove?: boolean; list?: boolean }) => {
+    // List all aliases
+    if (options?.list || (!aliasName && !providerId)) {
+      const aliases = getAliases();
+      if (aliases.length === 0) {
+        console.log(chalk.gray("\n  No aliases defined.\n"));
+        console.log(chalk.gray("  Usage: agent alias <name> <provider-id>"));
+        console.log(chalk.gray("  Example: agent alias gpt openrouter-gpt4\n"));
+        return;
+      }
+
+      console.log(chalk.cyan.bold("\n  Provider Aliases\n"));
+      aliases.forEach(({ alias, providerId: pid }) => {
+        const provider = getProviderById(pid);
+        const status = provider ? chalk.green("●") : chalk.red("○");
+        console.log(`  ${status} ${chalk.cyan(alias.padEnd(12))} → ${pid}`);
+      });
+      console.log(chalk.gray(`\n  ${chalk.green("●")} Valid  ${chalk.red("○")} Provider not found\n`));
+      return;
+    }
+
+    // Remove alias
+    if (options?.remove && aliasName) {
+      if (removeAlias(aliasName)) {
+        console.log(chalk.green(`✓ Alias "${aliasName}" removed.`));
+      } else {
+        console.error(chalk.red(`Alias not found: ${aliasName}`));
+      }
+      return;
+    }
+
+    // Show single alias
+    if (aliasName && !providerId) {
+      const targetId = getProviderByAlias(aliasName);
+      if (targetId) {
+        const provider = getProviderById(targetId);
+        console.log(`  ${chalk.cyan(aliasName)} → ${targetId}${provider ? "" : chalk.red(" (not found)")}`);
+      } else {
+        console.log(chalk.gray(`  Alias "${aliasName}" not defined.`));
+      }
+      return;
+    }
+
+    // Create/update alias
+    if (aliasName && providerId) {
+      const provider = getProviderById(providerId);
+      if (!provider) {
+        console.error(chalk.red(`Unknown provider: ${providerId}`));
+        console.log("\nAvailable providers:");
+        getAllProviders().slice(0, 10).forEach((p) => {
+          console.log(`  ${chalk.cyan(p.id)}`);
+        });
+        process.exit(1);
+      }
+
+      setAlias(aliasName, providerId);
+      console.log(chalk.green(`✓ Alias created: ${aliasName} → ${providerId}`));
+    }
+  });
+
+// ==================== TAGS ====================
+
+program
+  .command("tag")
+  .description("Manage provider tags")
+  .argument("[provider]", "Provider ID to tag")
+  .argument("[tags...]", "Tags to add (comma-separated or multiple args)")
+  .option("-r, --remove <tag>", "Remove a tag from provider")
+  .option("-l, --list", "List all tags")
+  .option("-f, --find <tag>", "Find providers with a specific tag")
+  .action((providerId?: string, tags?: string[], options?: { remove?: string; list?: boolean; find?: string }) => {
+    // List all tags
+    if (options?.list) {
+      const allTags = getAllTags();
+      if (allTags.length === 0) {
+        console.log(chalk.gray("\n  No tags defined.\n"));
+        console.log(chalk.gray("  Usage: agent tag <provider-id> <tag1> <tag2>..."));
+        console.log(chalk.gray("  Example: agent tag openrouter fast cheap\n"));
+        return;
+      }
+
+      console.log(chalk.cyan.bold("\n  All Tags\n"));
+      allTags.forEach((tag) => {
+        const providers = getProvidersByTag(tag);
+        console.log(`  ${chalk.yellow(`#${tag}`)} (${providers.length} provider${providers.length === 1 ? "" : "s"})`);
+      });
+      console.log("");
+      return;
+    }
+
+    // Find providers by tag
+    if (options?.find) {
+      const providers = getProvidersByTag(options.find);
+      if (providers.length === 0) {
+        console.log(chalk.gray(`\n  No providers with tag "${options.find}".\n`));
+        return;
+      }
+
+      console.log(chalk.cyan.bold(`\n  Providers with tag #${options.find}\n`));
+      providers.forEach((pid) => {
+        const provider = getProviderById(pid);
+        console.log(`  ${chalk.cyan(pid.padEnd(15))} ${provider?.description || ""}`);
+      });
+      console.log("");
+      return;
+    }
+
+    // Show tags for provider
+    if (providerId && (!tags || tags.length === 0) && !options?.remove) {
+      const provider = getProviderById(providerId);
+      if (!provider) {
+        console.error(chalk.red(`Unknown provider: ${providerId}`));
+        process.exit(1);
+      }
+
+      const providerTags = getTagsForProvider(providerId);
+      if (providerTags.length === 0) {
+        console.log(chalk.gray(`\n  No tags for ${providerId}.\n`));
+      } else {
+        console.log(`\n  ${chalk.cyan(providerId)}: ${providerTags.map((t) => chalk.yellow(`#${t}`)).join(" ")}\n`);
+      }
+      return;
+    }
+
+    // Remove tag
+    if (options?.remove && providerId) {
+      removeTagFromProvider(providerId, options.remove);
+      console.log(chalk.green(`✓ Removed tag #${options.remove} from ${providerId}`));
+      return;
+    }
+
+    // Add tags
+    if (providerId && tags && tags.length > 0) {
+      const provider = getProviderById(providerId);
+      if (!provider) {
+        console.error(chalk.red(`Unknown provider: ${providerId}`));
+        process.exit(1);
+      }
+
+      // Handle comma-separated tags in a single argument
+      const allTags = tags.flatMap((t) => t.split(",").map((s) => s.trim().toLowerCase()).filter(Boolean));
+
+      allTags.forEach((tag) => {
+        addTagToProvider(providerId, tag);
+      });
+
+      console.log(chalk.green(`✓ Added tags to ${providerId}: ${allTags.map((t) => `#${t}`).join(" ")}`));
+      return;
+    }
+
+    // No arguments - show help
+    console.log(chalk.cyan.bold("\n  Tag Management\n"));
+    console.log("  Usage:");
+    console.log("    agent tag -l                    List all tags");
+    console.log("    agent tag -f <tag>              Find providers with tag");
+    console.log("    agent tag <provider>            Show tags for provider");
+    console.log("    agent tag <provider> <tags...>  Add tags to provider");
+    console.log("    agent tag <provider> -r <tag>   Remove tag from provider\n");
+  });
+
+// ==================== PINNED PROVIDERS ====================
+
+program
+  .command("pin")
+  .description("Manage pinned providers (shown at top of list)")
+  .argument("[provider]", "Provider ID to pin/unpin")
+  .option("-l, --list", "List all pinned providers")
+  .action((providerId?: string, options?: { list?: boolean }) => {
+    // List pinned providers
+    if (options?.list || !providerId) {
+      const pinned = getPinnedProviders();
+      if (pinned.length === 0) {
+        console.log(chalk.gray("\n  No pinned providers.\n"));
+        console.log(chalk.gray("  Usage: agent pin <provider-id>"));
+        console.log(chalk.gray("  Pinned providers appear at the top of the list.\n"));
+        return;
+      }
+
+      console.log(chalk.cyan.bold("\n  Pinned Providers\n"));
+      pinned.forEach((pid) => {
+        const provider = getProviderById(pid);
+        console.log(`  📌 ${chalk.cyan(pid.padEnd(15))} ${provider?.description || chalk.red("(not found)")}`);
+      });
+      console.log(chalk.gray("\n  Use 'agent pin <id>' again to unpin.\n"));
+      return;
+    }
+
+    // Toggle pin
+    const provider = getProviderById(providerId);
+    if (!provider) {
+      console.error(chalk.red(`Unknown provider: ${providerId}`));
+      process.exit(1);
+    }
+
+    const nowPinned = togglePinned(providerId);
+    if (nowPinned) {
+      console.log(chalk.green(`📌 Pinned: ${providerId}`));
+    } else {
+      console.log(chalk.green(`✓ Unpinned: ${providerId}`));
+    }
+  });
 
 program
   .command("update-all")

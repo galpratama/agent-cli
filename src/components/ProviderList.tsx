@@ -33,6 +33,8 @@ import {
   addSession,
   getTagsForProvider,
   getAliases,
+  getPinnedProviders,
+  togglePinned,
 } from "../lib/config.js";
 import { ProviderItem } from "./ProviderItem.js";
 import { useMouse, MouseEvent } from "../lib/useMouse.js";
@@ -97,6 +99,7 @@ export function ProviderList({
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [validationResults, setValidationResults] = useState<Map<string, ValidationResult>>(new Map());
   const [favorites, setFavorites] = useState<string[]>(getFavorites());
+  const [pinnedProviders, setPinnedProviders] = useState<string[]>(getPinnedProviders());
   const [continueMode, setContinueMode] = useState(false);
   const [skipPermsMode, setSkipPermsMode] = useState(false);
   const [lastClickTime, setLastClickTime] = useState(0);
@@ -168,6 +171,12 @@ export function ProviderList({
       if (aFav && !bFav) return -1;
       if (!aFav && bFav) return 1;
 
+      // Pinned providers second (after favorites)
+      const aPinned = pinnedProviders.includes(a.id);
+      const bPinned = pinnedProviders.includes(b.id);
+      if (aPinned && !bPinned) return -1;
+      if (!aPinned && bPinned) return 1;
+
       // Then by sort mode
       switch (sortMode) {
         case "usage": {
@@ -192,7 +201,7 @@ export function ProviderList({
           return a.name.localeCompare(b.name);
       }
     });
-  }, [allProviders, favorites, sortMode, usageStats]);
+  }, [allProviders, favorites, pinnedProviders, sortMode, usageStats]);
 
   // Pre-compute alias map for O(1) lookups (instead of creating in filter loop)
   const aliasMap = useMemo(() => {
@@ -495,6 +504,15 @@ export function ProviderList({
         showStatus(isFav ? `★ ${selected.name} favorited` : `☆ ${selected.name} unfavorited`);
       }
     }
+    // Toggle pinned
+    else if (input === "p") {
+      const selected = filteredProviders[selectedIndex];
+      if (selected) {
+        const isPinned = togglePinned(selected.id);
+        setPinnedProviders(getPinnedProviders());
+        showStatus(isPinned ? `📌 ${selected.name} pinned` : `${selected.name} unpinned`);
+      }
+    }
     // Toggle continue mode
     else if (input === "c") {
       const newMode = !continueMode;
@@ -598,6 +616,7 @@ export function ProviderList({
           <Text></Text>
           <Text><Text color="cyan">Organization</Text></Text>
           <Text dimColor>  f           Toggle favorite</Text>
+          <Text dimColor>  p           Toggle pinned</Text>
           <Text dimColor>  s           Cycle sort mode</Text>
           <Text></Text>
           <Text><Text color="cyan">Actions</Text></Text>
@@ -743,6 +762,7 @@ export function ProviderList({
                   isHighlighted={currentIndex === selectedIndex}
                   validationResult={validationResults.get(provider.id)}
                   isFavorite={favorites.includes(provider.id)}
+                  isPinned={pinnedProviders.includes(provider.id)}
                   isLast={provider.id === lastProvider}
                 />
                 {/* Usage count */}

@@ -17,6 +17,7 @@ interface ProviderItemProps {
   isHighlighted: boolean;
   validationResult?: ValidationResult;
   isFavorite?: boolean;
+  isPinned?: boolean;
   isLast?: boolean;
 }
 
@@ -27,6 +28,7 @@ function ProviderItemComponent({
   isHighlighted,
   validationResult,
   isFavorite = false,
+  isPinned = false,
   isLast = false,
 }: ProviderItemProps): React.ReactElement {
   const isValid = validationResult?.valid ?? false;
@@ -71,9 +73,13 @@ function ProviderItemComponent({
         {isLast && <Text color="blue"> ↺</Text>}
       </Box>
 
-      {/* Favorite indicator */}
+      {/* Favorite/Pinned indicator */}
       <Box width={2}>
-        {isFavorite && <Text color="yellow">★</Text>}
+        {isFavorite ? (
+          <Text color="yellow">★</Text>
+        ) : isPinned ? (
+          <Text color="magenta">📌</Text>
+        ) : null}
       </Box>
 
       {/* Description */}
@@ -94,6 +100,7 @@ export const ProviderItem = memo(ProviderItemComponent, (prevProps, nextProps) =
     prevProps.isHighlighted === nextProps.isHighlighted &&
     prevProps.validationResult?.valid === nextProps.validationResult?.valid &&
     prevProps.isFavorite === nextProps.isFavorite &&
+    prevProps.isPinned === nextProps.isPinned &&
     prevProps.isLast === nextProps.isLast
   );
 });
