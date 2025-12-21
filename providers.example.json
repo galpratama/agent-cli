@@ -5,12 +5,14 @@
     {
       "id": "claude",
       "name": "Claude",
-      "description": "Default Anthropic Claude",
+      "description": "Official Anthropic Claude API",
       "icon": "",
       "type": "api",
       "category": "anthropic",
       "configDir": "~/.claude",
-      "envVars": {},
+      "envVars": {
+        "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1"
+      },
       "validation": { "type": "env" },
       "updateCmd": ["claude", "update"]
     },
@@ -21,12 +23,17 @@
       "icon": "",
       "type": "api",
       "category": "openrouter",
-      "configDir": "~/.claude-openrouter",
+      "configDir": "~/.claude",
       "envVars": {
-        "ANTHROPIC_BASE_URL": "https://openrouter.ai/api"
+        "ANTHROPIC_BASE_URL": "https://openrouter.ai/api",
+        "ANTHROPIC_DEFAULT_SONNET_MODEL": "z-ai/glm-4.5-air:free",
+        "ANTHROPIC_DEFAULT_HAIKU_MODEL": "z-ai/glm-4.5-air:free",
+        "ANTHROPIC_DEFAULT_OPUS_MODEL": "z-ai/glm-4.5-air:free",
+        "CLAUDE_PROVIDER": "OpenRouter",
+        "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1"
       },
       "envMappings": {
-        "OPENROUTER_API_KEY": "ANTHROPIC_API_KEY"
+        "OPENROUTER_API_KEY": "ANTHROPIC_AUTH_TOKEN"
       },
       "validation": { "type": "env", "envKey": "OPENROUTER_API_KEY" },
       "updateCmd": ["claude", "update"],
@@ -46,31 +53,56 @@
       "icon": "",
       "type": "api",
       "category": "megallm",
-      "configDir": "~/.claude-megallm",
+      "configDir": "~/.claude",
       "envVars": {
-        "ANTHROPIC_BASE_URL": "https://ai.megallm.io"
+        "ANTHROPIC_BASE_URL": "https://ai.megallm.io",
+        "ANTHROPIC_DEFAULT_SONNET_MODEL": "claude-sonnet-4-5-20250929",
+        "ANTHROPIC_DEFAULT_HAIKU_MODEL": "claude-haiku-4-5-20251001",
+        "ANTHROPIC_DEFAULT_OPUS_MODEL": "claude-opus-4-5-20251101",
+        "CLAUDE_PROVIDER": "MegaLLM",
+        "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1"
       },
       "envMappings": {
-        "MEGALLM_API_KEY": "ANTHROPIC_API_KEY"
+        "MEGALLM_API_KEY": "ANTHROPIC_AUTH_TOKEN"
       },
       "validation": { "type": "env", "envKey": "MEGALLM_API_KEY" },
       "updateCmd": ["claude", "update"],
       "models": [
-        "minimaxai/minimax-m2",
-        "moonshotai/kimi-k2-thinking",
-        "moonshotai/kimi-k2-instruct-0905",
-        "mistralai/mistral-nemotron",
-        "mistral-large-3-675b-instruct-2512",
-        "llama3-8b-instruct",
+        "gpt-4.1",
+        "gpt-5-mini",
+        "gpt-5",
+        "gpt-3.5-turbo",
+        "gpt-4o-mini",
+        "gpt-4o",
+        "claude-opus-4-1-20250805",
+        "claude-sonnet-4-5-20250929",
+        "claude-sonnet-4-20250514",
+        "openai-gpt-oss-20b",
         "llama3.3-70b-instruct",
         "deepseek-r1-distill-llama-70b",
-        "deepseek-ai/deepseek-v3.1-terminus",
-        "deepseek-ai/deepseek-v3.1",
-        "deepseek-v3.2",
-        "qwen/qwen3-next-80b-a3b-instruct",
         "alibaba-qwen3-32b",
-        "openai-gpt-oss-20b",
-        "openai-gpt-oss-120b"
+        "gemini-2.5-pro",
+        "claude-opus-4-20250514",
+        "openai-gpt-oss-120b",
+        "llama3-8b-instruct",
+        "claude-haiku-4-5-20251001",
+        "moonshotai/kimi-k2-instruct-0905",
+        "deepseek-ai/deepseek-v3.1-terminus",
+        "qwen/qwen3-next-80b-a3b-instruct",
+        "deepseek-ai/deepseek-v3.1",
+        "mistralai/mistral-nemotron",
+        "glm-4.6",
+        "gemini-2.5-flash",
+        "minimaxai/minimax-m2",
+        "gpt-5.1",
+        "deepseek-v3.2",
+        "gemini-3-pro-preview",
+        "moonshotai/kimi-k2-thinking",
+        "claude-opus-4-5-20251101",
+        "grok-4.1-fast-reasoning",
+        "grok-4.1-fast-non-reasoning",
+        "qwen3-coder-480b-a35b-instruct",
+        "mistral-large-3-675b-instruct-2512"
       ],
       "modelEnvVar": "ANTHROPIC_MODEL"
     },
@@ -97,63 +129,308 @@
     {
       "id": "glm",
       "name": "GLM",
-      "description": "GLM/Zhipu AI models (Z.ai)",
+      "description": "Zhipu AI's GLM models (Chinese, bilingual)",
       "icon": "",
       "type": "api",
       "category": "chinese",
-      "configDir": "~/.claudeglm",
+      "configDir": "~/.claude",
       "envVars": {
         "ANTHROPIC_BASE_URL": "https://api.z.ai/api/anthropic",
         "ANTHROPIC_DEFAULT_HAIKU_MODEL": "glm-4.5-air",
         "ANTHROPIC_DEFAULT_SONNET_MODEL": "glm-4.6",
-        "ANTHROPIC_DEFAULT_OPUS_MODEL": "glm-4.6"
+        "ANTHROPIC_DEFAULT_OPUS_MODEL": "glm-4.6",
+        "CLAUDE_PROVIDER": "GLM",
+        "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1"
       },
       "envMappings": {
         "Z_AI_API_KEY": "ANTHROPIC_AUTH_TOKEN"
       },
-      "validation": { "type": "env", "envKey": "Z_AI_API_KEY" }
+      "validation": { "type": "env", "envKey": "Z_AI_API_KEY" },
+      "updateCmd": ["claude", "update"]
     },
     {
       "id": "kimi",
       "name": "Kimi",
-      "description": "Kimi AI",
+      "description": "Moonshot AI's Kimi (long-context support)",
       "icon": "",
       "type": "api",
       "category": "chinese",
-      "configDir": "~/.claudekimi",
+      "configDir": "~/.claude",
       "envVars": {
-        "ANTHROPIC_BASE_URL": "https://api.kimi.com/coding/"
+        "ANTHROPIC_BASE_URL": "https://api.kimi.com/coding/",
+        "ANTHROPIC_DEFAULT_HAIKU_MODEL": "kimi-for-coding",
+        "ANTHROPIC_DEFAULT_OPUS_MODEL": "kimi-for-coding",
+        "ANTHROPIC_DEFAULT_SONNET_MODEL": "kimi-for-coding",
+        "ANTHROPIC_MODEL": "kimi-for-coding",
+        "CLAUDE_PROVIDER": "Kimi",
+        "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1"
       },
       "envMappings": {
-        "KIMI_API_KEY": "ANTHROPIC_API_KEY"
+        "KIMI_API_KEY": "ANTHROPIC_AUTH_TOKEN"
       },
-      "validation": { "type": "env", "envKey": "KIMI_API_KEY" }
+      "validation": { "type": "env", "envKey": "KIMI_API_KEY" },
+      "updateCmd": ["claude", "update"]
     },
     {
       "id": "minimax",
       "name": "MiniMax",
-      "description": "MiniMax AI models",
+      "description": "MiniMax multimodal models (vision + text)",
       "icon": "",
       "type": "api",
       "category": "chinese",
-      "configDir": "~/.claudeminimax",
+      "configDir": "~/.claude",
       "envVars": {
         "ANTHROPIC_BASE_URL": "https://api.minimax.io/anthropic",
-        "ANTHROPIC_MODEL": "MiniMax-M2",
-        "ANTHROPIC_SMALL_FAST_MODEL": "MiniMax-M2",
         "ANTHROPIC_DEFAULT_HAIKU_MODEL": "MiniMax-M2",
         "ANTHROPIC_DEFAULT_SONNET_MODEL": "MiniMax-M2",
-        "ANTHROPIC_DEFAULT_OPUS_MODEL": "MiniMax-M2"
+        "ANTHROPIC_DEFAULT_OPUS_MODEL": "MiniMax-M2",
+        "CLAUDE_PROVIDER": "MiniMax",
+        "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1"
       },
       "envMappings": {
         "MINIMAX_API_KEY": "ANTHROPIC_AUTH_TOKEN"
       },
-      "validation": { "type": "env", "envKey": "MINIMAX_API_KEY" }
+      "validation": { "type": "env", "envKey": "MINIMAX_API_KEY" },
+      "updateCmd": ["claude", "update"]
+    },
+    {
+      "id": "agy",
+      "name": "Antigravity",
+      "description": "Using Claude models inside Antigravity proxy",
+      "icon": "",
+      "type": "proxy",
+      "category": "local",
+      "configDir": "~/.claude",
+      "envVars": {
+        "ANTHROPIC_BASE_URL": "http://127.0.0.1:8317",
+        "ANTHROPIC_AUTH_TOKEN": "sk-dummy",
+        "ANTHROPIC_DEFAULT_OPUS_MODEL": "gemini-claude-opus-4-5-thinking",
+        "ANTHROPIC_DEFAULT_SONNET_MODEL": "gemini-claude-sonnet-4-5-thinking",
+        "ANTHROPIC_DEFAULT_HAIKU_MODEL": "gemini-claude-sonnet-4-5",
+        "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1",
+        "CLAUDE_PROVIDER": "Antigravity"
+      },
+      "validation": {
+        "type": "http",
+        "url": "http://127.0.0.1:8317"
+      },
+      "updateCmd": ["claude", "update"]
+    },
+    {
+      "id": "kiro",
+      "name": "Kiro",
+      "description": "Using Claude models inside Kiro proxy",
+      "icon": "",
+      "type": "proxy",
+      "category": "local",
+      "configDir": "~/.claude",
+      "envVars": {
+        "ANTHROPIC_BASE_URL": "http://127.0.0.1:8317",
+        "ANTHROPIC_AUTH_TOKEN": "sk-dummy",
+        "ANTHROPIC_DEFAULT_OPUS_MODEL": "kiro-claude-opus-4-5",
+        "ANTHROPIC_DEFAULT_SONNET_MODEL": "kiro-claude-sonnet-4-5",
+        "ANTHROPIC_DEFAULT_HAIKU_MODEL": "kiro-claude-haiku-4-5",
+        "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1",
+        "CLAUDE_PROVIDER": "Kiro"
+      },
+      "validation": {
+        "type": "http",
+        "url": "http://127.0.0.1:8317"
+      },
+      "updateCmd": ["claude", "update"],
+      "models": [
+        "kiro-claude-sonnet-4-5",
+        "kiro-claude-haiku-4-5",
+        "kiro-claude-haiku-4-5-agentic",
+        "kiro-claude-opus-4-5-agentic",
+        "kiro-claude-sonnet-4-5-agentic",
+        "kiro-claude-sonnet-4",
+        "kiro-claude-sonnet-4-agentic",
+        "kiro-claude-opus-4-5"
+      ],
+      "modelEnvVar": "ANTHROPIC_MODEL"
+    },
+    {
+      "id": "qwen",
+      "name": "Qwen",
+      "description": "Using Qwen models inside Claude Code via proxy",
+      "icon": "",
+      "type": "proxy",
+      "category": "local",
+      "configDir": "~/.claude",
+      "envVars": {
+        "ANTHROPIC_BASE_URL": "http://127.0.0.1:8317",
+        "ANTHROPIC_AUTH_TOKEN": "sk-dummy",
+        "ANTHROPIC_DEFAULT_OPUS_MODEL": "qwen3-coder-plus",
+        "ANTHROPIC_DEFAULT_SONNET_MODEL": "qwen3-coder-plus",
+        "ANTHROPIC_DEFAULT_HAIKU_MODEL": "qwen3-coder-plus",
+        "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1",
+        "CLAUDE_PROVIDER": "Qwen"
+      },
+      "validation": {
+        "type": "http",
+        "url": "http://127.0.0.1:8317"
+      },
+      "updateCmd": ["claude", "update"],
+      "models": [
+        "qwen3-coder-flash",
+        "vision-model"
+      ],
+      "modelEnvVar": "ANTHROPIC_MODEL"
+    },
+    {
+      "id": "iflow",
+      "name": "iFlow",
+      "description": "Using iFlow models inside Claude Code via proxy",
+      "icon": "",
+      "type": "proxy",
+      "category": "local",
+      "configDir": "~/.claude",
+      "envVars": {
+        "ANTHROPIC_BASE_URL": "http://127.0.0.1:8317",
+        "ANTHROPIC_AUTH_TOKEN": "sk-dummy",
+        "ANTHROPIC_DEFAULT_OPUS_MODEL": "glm-4.6",
+        "ANTHROPIC_DEFAULT_SONNET_MODEL": "glm-4.6",
+        "ANTHROPIC_DEFAULT_HAIKU_MODEL": "glm-4.6",
+        "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1",
+        "CLAUDE_PROVIDER": "iFlow"
+      },
+      "validation": {
+        "type": "http",
+        "url": "http://127.0.0.1:8317"
+      },
+      "updateCmd": ["claude", "update"],
+      "models": [
+        "qwen3-32b",
+        "deepseek-v3",
+        "deepseek-v3.1",
+        "qwen3-235b-a22b-thinking-2507",
+        "deepseek-v3.2-reasoner",
+        "qwen3-max-preview",
+        "qwen3-vl-plus",
+        "kimi-k2-thinking",
+        "kimi-k2",
+        "minimax-m2",
+        "qwen3-max",
+        "kimi-k2-0905",
+        "glm-4.6",
+        "qwen3-235b-a22b-instruct",
+        "deepseek-v3.2-chat",
+        "qwen3-235b",
+        "deepseek-v3.2",
+        "deepseek-r1",
+        "tstars2.0",
+        "qwen3-coder-plus"
+      ],
+      "modelEnvVar": "ANTHROPIC_MODEL"
+    },
+    {
+      "id": "github-copilot",
+      "name": "GitHub Copilot",
+      "description": "GitHub Copilot AI models via local proxy",
+      "icon": "",
+      "type": "proxy",
+      "category": "local",
+      "configDir": "~/.claude",
+      "envVars": {
+        "ANTHROPIC_BASE_URL": "http://127.0.0.1:8317",
+        "ANTHROPIC_AUTH_TOKEN": "sk-dummy",
+        "ANTHROPIC_DEFAULT_HAIKU_MODEL": "claude-haiku-4.5",
+        "ANTHROPIC_DEFAULT_SONNET_MODEL": "claude-sonnet-4.5",
+        "ANTHROPIC_DEFAULT_OPUS_MODEL": "claude-opus-4.5",
+        "CLAUDE_PROVIDER": "GitHub Copilot",
+        "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1"
+      },
+      "validation": {
+        "type": "http",
+        "url": "http://127.0.0.1:8317"
+      },
+      "updateCmd": ["claude", "update"],
+      "models": [
+        "claude-haiku-4.5",
+        "claude-sonnet-4",
+        "claude-opus-4.1",
+        "kiro-claude-sonnet-4-5",
+        "gpt-5",
+        "gemini-3-pro",
+        "grok-code-fast-1",
+        "claude-opus-4.5",
+        "gpt-5.1-codex",
+        "claude-sonnet-4.5",
+        "gpt-5-codex",
+        "gpt-5-mini",
+        "gpt-4.1",
+        "gemini-2.5-pro",
+        "gpt-5.1",
+        "gpt-5.2",
+        "gpt-5.1-codex-mini",
+        "raptor-mini"
+      ],
+      "modelEnvVar": "ANTHROPIC_MODEL"
+    },
+    {
+      "id": "google",
+      "name": "Google",
+      "description": "Google Gemini models via local proxy",
+      "icon": "",
+      "type": "proxy",
+      "category": "local",
+      "configDir": "~/.claude",
+      "envVars": {
+        "ANTHROPIC_BASE_URL": "http://127.0.0.1:8317",
+        "ANTHROPIC_AUTH_TOKEN": "sk-dummy",
+        "ANTHROPIC_DEFAULT_HAIKU_MODEL": "gemini-2.5-flash",
+        "ANTHROPIC_DEFAULT_SONNET_MODEL": "gemini-3-pro-preview",
+        "ANTHROPIC_DEFAULT_OPUS_MODEL": "gemini-3-pro-preview",
+        "CLAUDE_PROVIDER": "Google",
+        "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1"
+      },
+      "validation": {
+        "type": "http",
+        "url": "http://127.0.0.1:8317"
+      },
+      "updateCmd": ["claude", "update"],
+      "models": [
+        "gemini-3-pro-preview",
+        "gemini-3-flash-preview",
+        "gemini-2.5-flash-lite",
+        "gemini-2.5-flash"
+      ],
+      "modelEnvVar": "ANTHROPIC_MODEL"
+    },
+    {
+      "id": "openai",
+      "name": "OpenAI",
+      "description": "OpenAI GPT models via local proxy",
+      "icon": "",
+      "type": "proxy",
+      "category": "local",
+      "configDir": "~/.claude",
+      "envVars": {
+        "ANTHROPIC_BASE_URL": "http://127.0.0.1:8317",
+        "ANTHROPIC_AUTH_TOKEN": "sk-dummy",
+        "ANTHROPIC_DEFAULT_HAIKU_MODEL": "gpt-5-codex-mini",
+        "ANTHROPIC_DEFAULT_SONNET_MODEL": "gpt-5.2-codex",
+        "ANTHROPIC_DEFAULT_OPUS_MODEL": "gpt-5.1-codex-max",
+        "CLAUDE_PROVIDER": "OpenAI",
+        "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1"
+      },
+      "validation": {
+        "type": "http",
+        "url": "http://127.0.0.1:8317"
+      },
+      "updateCmd": ["claude", "update"],
+      "models": [
+        "gpt-5.2-codex",
+        "gpt-5.1-codex-max",
+        "gpt-5-codex-mini"
+      ],
+      "modelEnvVar": "ANTHROPIC_MODEL"
     },
     {
       "id": "codex",
-      "name": "Codex",
-      "description": "OpenAI Codex CLI",
+      "name": "Codex CLI",
+      "description": "OpenAI Codex for code generation",
       "icon": "",
       "type": "standalone",
       "category": "standalone",
@@ -167,8 +444,8 @@
     },
     {
       "id": "vibe",
-      "name": "Vibe",
-      "description": "Mistral Devstral CLI",
+      "name": "Vibe CLI",
+      "description": "Mistral Devstral for developer coding",
       "icon": "",
       "type": "standalone",
       "category": "standalone",
@@ -182,8 +459,8 @@
     },
     {
       "id": "opencode",
-      "name": "OpenCode",
-      "description": "OpenCode AI CLI",
+      "name": "OpenCode CLI",
+      "description": "Open-source AI coding assistant",
       "icon": "",
       "type": "standalone",
       "category": "standalone",
@@ -196,8 +473,8 @@
     },
     {
       "id": "gemini",
-      "name": "Gemini",
-      "description": "Google Gemini CLI",
+      "name": "Gemini CLI",
+      "description": "Google Gemini multimodal AI",
       "icon": "",
       "type": "standalone",
       "category": "standalone",
@@ -205,14 +482,29 @@
       "envVars": {},
       "command": "gemini",
       "validation": { "type": "command", "command": "gemini" },
-      "updateCmd": ["npm", "update", "-g", "@google/gemini-cli"],
+      "updateCmd": ["npm", "update", "-g", "@anthropic-ai/claude-code"],
+      "skipPermissionsArg": "--yolo",
+      "continueArg": "--continue"
+    },
+    {
+      "id": "droid",
+      "name": "Factory CLI",
+      "description": "Similiar like Claude Code but with more features",
+      "icon": "",
+      "type": "standalone",
+      "category": "standalone",
+      "configDir": "~/.droid",
+      "envVars": {},
+      "command": "droid",
+      "validation": { "type": "command", "command": "droid" },
+      "updateCmd": ["npm", "update", "-g", "@anthropic-ai/droid"],
       "skipPermissionsArg": "--yolo",
       "continueArg": "--continue"
     },
     {
       "id": "kilo",
-      "name": "Kilo",
-      "description": "KiloCode CLI",
+      "name": "KiloCode CLI",
+      "description": "Lightweight rapid development assistant",
       "icon": "",
       "type": "standalone",
       "category": "standalone",
@@ -225,9 +517,23 @@
       "continueArg": "--continue"
     },
     {
+      "id": "letta",
+      "name": "Letta CLI",
+      "description": "Memory-augmented AI with persistent context",
+      "icon": "",
+      "type": "standalone",
+      "category": "standalone",
+      "configDir": "~/.letta",
+      "envVars": {},
+      "command": "letta",
+      "validation": { "type": "command", "command": "letta" },
+      "skipPermissionsArg": "--yolo",
+      "continueArg": "--continue"
+    },
+    {
       "id": "qwen",
-      "name": "Qwen",
-      "description": "Alibaba Qwen CLI",
+      "name": "Qwen CLI",
+      "description": "Alibaba Qwen (bilingual Chinese-English)",
       "icon": "",
       "type": "standalone",
       "category": "standalone",
@@ -235,7 +541,7 @@
       "envVars": {},
       "command": "qwen",
       "validation": { "type": "command", "command": "qwen" },
-      "updateCmd": ["npm", "update", "-g", "@anthropic-ai/qwen-code"],
+      "updateCmd": ["npm", "update", "-g", "@anthropic-ai/claude-code"],
       "skipPermissionsArg": "--yolo",
       "continueArg": "--continue"
     },
@@ -253,8 +559,26 @@
         "type": "command",
         "command": "codebuff"
       },
-      "updateCmd": [],
-      "skipPermissionsArg": "",
+      "continueArg": "--continue"
+    },
+    {
+      "id": "kimi-cli",
+      "name": "Kimi CLI",
+      "description": "Moonshot AI's Kimi using Kimi CLI",
+      "icon": "",
+      "type": "standalone",
+      "category": "standalone",
+      "command": "kimi",
+      "configDir": "~/.kimi-cli",
+      "envVars": {
+        "TERM": "xterm-256color"
+      },
+      "validation": {
+        "type": "command",
+        "command": "kimi"
+      },
+      "updateCmd": ["uv", "tool", "upgrade", "kimi-cli"],
+      "skipPermissionsArg": "--auto-approve",
       "continueArg": "--continue"
     }
   ],
