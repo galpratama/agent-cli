@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.1] - 2025-12-22
+
+### Fixed
+
+- **Duplicate provider key error** - Fixed React warning "Encountered two children with the same key" when providers.json contains duplicate IDs
+  - Added deduplication logic in `getAllProviders()` to filter out duplicate provider IDs (keeps first occurrence)
+  - Renamed duplicate `qwen` provider to `qwen-cli` in example configuration
+- **Terminal height calculation edge cases** - Fixed potential errors when terminal reports invalid dimensions
+  - Added validation for `process.stdout.rows` to ensure it's a finite positive integer
+  - Added `Math.floor()` to ensure height values are always integers for Ink's Box component
+- **Scroll offset edge cases when navigating to last items** - Fixed errors when pressing `G` or scrolling to the end of the list
+  - Added empty list guards in scroll synchronization effects
+  - Added bounds checking to prevent negative scroll offsets
+  - Added guards for "go to first/last" keyboard shortcuts when list is empty
+- **Dynamic Box height** - Box height now adjusts based on actual content count, preventing layout issues when fewer items than LIST_HEIGHT
+
 ## [1.2.0] - 2025-12-20
 
 ### Added
