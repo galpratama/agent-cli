@@ -113,7 +113,12 @@ export function ProviderList({
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [isValidating, setIsValidating] = useState(true);
   const [scrollOffset, setScrollOffset] = useState(0);
-  const [terminalHeight, setTerminalHeight] = useState(process.stdout.rows ?? 24);
+  const [terminalHeight, setTerminalHeight] = useState(() => {
+    const rows = process.stdout.rows;
+    return typeof rows === "number" && Number.isFinite(rows) && rows > 0
+      ? Math.floor(rows)
+      : 24;
+  });
 
   // Get terminal dimensions for scrollable list
   const { stdout } = useStdout();
@@ -121,7 +126,12 @@ export function ProviderList({
   // Listen for terminal resize events
   useEffect(() => {
     const handleResize = () => {
-      setTerminalHeight(stdout?.rows ?? process.stdout.rows ?? 24);
+      const rows = stdout?.rows ?? process.stdout.rows;
+      // Ensure we always have a valid positive integer for terminal height
+      const safeRows = typeof rows === "number" && Number.isFinite(rows) && rows > 0
+        ? Math.floor(rows)
+        : 24;
+      setTerminalHeight(safeRows);
     };
 
     // Initial size
@@ -139,7 +149,8 @@ export function ProviderList({
 
   // Reserve lines for: Header (~10) + Footer (~10) + status bar (2) + search bar (2) + box border (2) + buffer (2) = ~28
   const RESERVED_LINES = 28;
-  const LIST_HEIGHT = Math.max(5, terminalHeight - RESERVED_LINES);
+  // Ensure LIST_HEIGHT is always a valid positive integer (minimum 5)
+  const LIST_HEIGHT = Math.max(5, Math.floor(terminalHeight - RESERVED_LINES));
 
   const lastProvider = getLastProvider();
   const usageStats = getUsageStats();
@@ -254,12 +265,21 @@ export function ProviderList({
 
   // Keep scroll offset synchronized with selection (virtual scrolling)
   useEffect(() => {
-    if (selectedIndex < scrollOffset) {
-      setScrollOffset(selectedIndex);
-    } else if (selectedIndex >= scrollOffset + LIST_HEIGHT) {
-      setScrollOffset(selectedIndex - LIST_HEIGHT + 1);
+    if (filteredProviders.length === 0) {
+      setScrollOffset(0);
+      return;
     }
-  }, [selectedIndex, scrollOffset, LIST_HEIGHT]);
+
+    // Clamp selectedIndex to valid range
+    const safeIndex = Math.max(0, Math.min(selectedIndex, filteredProviders.length - 1));
+
+    if (safeIndex < scrollOffset) {
+      setScrollOffset(safeIndex);
+    } else if (safeIndex >= scrollOffset + LIST_HEIGHT) {
+      // Ensure scroll offset is never negative
+      setScrollOffset(Math.max(0, safeIndex - LIST_HEIGHT + 1));
+    }
+  }, [selectedIndex, scrollOffset, LIST_HEIGHT, filteredProviders.length]);
 
   // Clamp scroll offset when terminal resizes or list shrinks
   useEffect(() => {
@@ -511,11 +531,15 @@ export function ProviderList({
     }
     // Go to first item
     else if (input === "g") {
-      setSelectedIndex(0);
+      if (filteredProviders.length > 0) {
+        setSelectedIndex(0);
+      }
     }
     // Go to last item
     else if (input === "G") {
-      setSelectedIndex(filteredProviders.length - 1);
+      if (filteredProviders.length > 0) {
+        setSelectedIndex(filteredProviders.length - 1);
+      }
     }
     // Update selected provider (any provider with updateCmd configured)
     else if (input === "u") {
@@ -691,7 +715,7 @@ export function ProviderList({
         borderStyle="round"
         borderColor="gray"
         paddingX={1}
-        height={LIST_HEIGHT + 4}
+        height={Math.max(5, Math.min(LIST_HEIGHT, filteredProviders.length) + 4)}
       >
         {/* Scroll indicator - top (always reserves space) */}
         <Box justifyContent="center" height={1}>

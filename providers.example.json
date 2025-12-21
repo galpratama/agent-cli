@@ -540,13 +540,13 @@
       "continueArg": "--continue"
     },
     {
-      "id": "qwen",
+      "id": "qwen-cli",
       "name": "Qwen CLI",
       "description": "Alibaba Qwen (bilingual Chinese-English)",
       "icon": "",
       "type": "standalone",
       "category": "standalone",
-      "configDir": "~/.qwen",
+      "configDir": "~/.qwen-cli",
       "envVars": {},
       "command": "qwen",
       "validation": { "type": "command", "command": "qwen" },

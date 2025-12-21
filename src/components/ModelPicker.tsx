@@ -57,14 +57,24 @@ export function ModelPicker({
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearching, setIsSearching] = useState(false);
   const [scrollOffset, setScrollOffset] = useState(0);
-  const [terminalHeight, setTerminalHeight] = useState(process.stdout.rows ?? 24);
+  const [terminalHeight, setTerminalHeight] = useState(() => {
+    const rows = process.stdout.rows;
+    return typeof rows === "number" && Number.isFinite(rows) && rows > 0
+      ? Math.floor(rows)
+      : 24;
+  });
 
   const { stdout } = useStdout();
 
   // Listen for terminal resize events
   useEffect(() => {
     const handleResize = () => {
-      setTerminalHeight(stdout?.rows ?? process.stdout.rows ?? 24);
+      const rows = stdout?.rows ?? process.stdout.rows;
+      // Ensure we always have a valid positive integer for terminal height
+      const safeRows = typeof rows === "number" && Number.isFinite(rows) && rows > 0
+        ? Math.floor(rows)
+        : 24;
+      setTerminalHeight(safeRows);
     };
 
     handleResize();
@@ -79,7 +89,8 @@ export function ModelPicker({
 
   // Reserve lines for header, footer, search bar, borders
   const RESERVED_LINES = 12;
-  const LIST_HEIGHT = Math.max(5, terminalHeight - RESERVED_LINES);
+  // Ensure LIST_HEIGHT is always a valid positive integer (minimum 5)
+  const LIST_HEIGHT = Math.max(5, Math.floor(terminalHeight - RESERVED_LINES));
 
   // Pre-select last used model on mount
   useEffect(() => {
@@ -107,12 +118,21 @@ export function ModelPicker({
 
   // Keep scroll offset synchronized with selection
   useEffect(() => {
-    if (selectedIndex < scrollOffset) {
-      setScrollOffset(selectedIndex);
-    } else if (selectedIndex >= scrollOffset + LIST_HEIGHT) {
-      setScrollOffset(selectedIndex - LIST_HEIGHT + 1);
+    if (filteredModels.length === 0) {
+      setScrollOffset(0);
+      return;
     }
-  }, [selectedIndex, scrollOffset, LIST_HEIGHT]);
+
+    // Clamp selectedIndex to valid range
+    const safeIndex = Math.max(0, Math.min(selectedIndex, filteredModels.length - 1));
+
+    if (safeIndex < scrollOffset) {
+      setScrollOffset(safeIndex);
+    } else if (safeIndex >= scrollOffset + LIST_HEIGHT) {
+      // Ensure scroll offset is never negative
+      setScrollOffset(Math.max(0, safeIndex - LIST_HEIGHT + 1));
+    }
+  }, [selectedIndex, scrollOffset, LIST_HEIGHT, filteredModels.length]);
 
   // Clamp scroll offset when terminal resizes or list shrinks
   useEffect(() => {
@@ -168,11 +188,15 @@ export function ModelPicker({
     }
     // Go to first item
     else if (input === "g") {
-      setSelectedIndex(0);
+      if (filteredModels.length > 0) {
+        setSelectedIndex(0);
+      }
     }
     // Go to last item
     else if (input === "G") {
-      setSelectedIndex(filteredModels.length - 1);
+      if (filteredModels.length > 0) {
+        setSelectedIndex(filteredModels.length - 1);
+      }
     }
     // Quick select by number (1-9, 0 = 10)
     else if (/^[0-9]$/.test(input) && !key.ctrl) {

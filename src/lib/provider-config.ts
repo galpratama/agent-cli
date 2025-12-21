@@ -123,14 +123,23 @@ export function saveProviderConfig(config: ProviderConfig): void {
 }
 
 /**
- * Get all providers (with overrides applied, disabled filtered out)
+ * Get all providers (with overrides applied, disabled filtered out, duplicates removed)
  */
 export function getAllProviders(): Provider[] {
   const config = loadProviderConfig();
+  const seenIds = new Set<string>();
 
-  // Apply overrides and filter disabled
+  // Apply overrides, filter disabled, and deduplicate by ID (keep first occurrence)
   return config.providers
     .filter((p) => !config.disabled.includes(p.id))
+    .filter((p) => {
+      if (seenIds.has(p.id)) {
+        // Skip duplicate - already seen this ID
+        return false;
+      }
+      seenIds.add(p.id);
+      return true;
+    })
     .map((p) => {
       const override = config.overrides[p.id];
       if (override) {
