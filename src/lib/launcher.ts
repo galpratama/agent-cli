@@ -11,6 +11,7 @@ import { randomUUID } from "crypto";
 import { Provider } from "./providers.js";
 import { getAllProviders } from "./provider-config.js";
 import { validateProvider } from "./validate.js";
+import { logError } from "./errors.js";
 
 /** Current platform */
 const isWindows = platform() === "win32";
@@ -208,8 +209,13 @@ export async function launchClaude(options: LaunchOptions): Promise<void> {
     if (tempDir) {
       try {
         rmSync(tempDir, { recursive: true, force: true });
-      } catch {
-        // Ignore cleanup errors
+      } catch (error) {
+        // Log cleanup errors but don't crash - temp files will be cleaned by OS eventually
+        logError(error, {
+          operation: "cleanupTempDir",
+          providerId: provider.id,
+          filePath: tempDir,
+        });
       }
     }
   };

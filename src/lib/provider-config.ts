@@ -12,6 +12,7 @@ import { homedir } from "os";
 import { fileURLToPath } from "url";
 import { dirname } from "path";
 import { Provider, ProviderCategory } from "./providers.js";
+import { logError } from "./errors.js";
 
 // Get package directory for example file
 const __filename = fileURLToPath(import.meta.url);
@@ -104,8 +105,14 @@ export function loadProviderConfig(): ProviderConfig {
       overrides: parsed.overrides || {},
       disabled: parsed.disabled || [],
     };
-  } catch {
-    // Return empty config on error
+  } catch (error) {
+    // Log error with context for debugging
+    logError(error, {
+      operation: "loadProviderConfig",
+      filePath: PROVIDERS_CONFIG_PATH,
+    });
+
+    // Return empty config to allow app to continue
     return {
       providers: [],
       overrides: {},

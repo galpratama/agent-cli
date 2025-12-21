@@ -6,6 +6,7 @@
 
 import { execFileSync } from "child_process";
 import { Provider } from "./providers.js";
+import { logError } from "./errors.js";
 
 export interface ValidationResult {
   valid: boolean;
@@ -49,7 +50,15 @@ function commandExists(command: string): boolean {
     // Using execFileSync with 'which' is safe - command is from our config, not user input
     execFileSync("which", [command], { stdio: "ignore" });
     return true;
-  } catch {
+  } catch (error) {
+    // Log only unexpected errors, not "command not found" (exit code 1)
+    const isNotFound = error instanceof Error &&
+      "status" in error &&
+      (error as NodeJS.ErrnoException & { status?: number }).status === 1;
+
+    if (!isNotFound) {
+      logError(error, { operation: "commandExists", command });
+    }
     return false;
   }
 }
@@ -100,8 +109,18 @@ export async function validateProvider(
 
         // Any response means the server is reachable
         result = { valid: true, message: `Reachable at ${validation.url}` };
-      } catch {
-        result = { valid: false, message: `Not reachable at ${validation.url}` };
+      } catch (error) {
+        // Log network errors with context (timeout, DNS failure, connection refused, etc.)
+        const isAbortError = error instanceof Error && error.name === "AbortError";
+        const errorDetail = isAbortError ? "timeout" : (error instanceof Error ? error.message : "unknown");
+
+        logError(error, {
+          operation: "validateHttpProvider",
+          providerId: provider.id,
+          url: validation.url,
+        });
+
+        result = { valid: false, message: `Not reachable at ${validation.url} (${errorDetail})` };
       }
     }
   } else if (validation.type === "command") {
