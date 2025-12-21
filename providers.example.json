@@ -214,7 +214,16 @@
         "type": "http",
         "url": "http://127.0.0.1:8317"
       },
-      "updateCmd": ["claude", "update"]
+      "updateCmd": ["claude", "update"],
+      "models": [
+        "gemini-claude-sonnet-4-5-thinking",
+        "gemini-2.5-computer-use-preview-10-2025",
+        "gpt-oss-120b-medium",
+        "gemini-claude-opus-4-5-thinking",
+        "gemini-3-pro-image-preview",
+        "gemini-claude-sonnet-4-5"
+      ],
+      "modelEnvVar": "ANTHROPIC_MODEL"
     },
     {
       "id": "kiro",
