@@ -13,7 +13,10 @@
     "dev": "tsx src/cli.tsx",
     "start": "node dist/cli.js",
     "watch": "tsc --watch",
-    "link": "npm run build && npm link"
+    "link": "npm run build && npm link",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
   },
   "keywords": [
     "cli",
@@ -37,8 +40,10 @@
   "devDependencies": {
     "@types/node": "^22.10.2",
     "@types/react": "^18.3.12",
+    "@vitest/coverage-v8": "^4.0.16",
     "tsx": "^4.19.2",
-    "typescript": "^5.7.2"
+    "typescript": "^5.7.2",
+    "vitest": "^4.0.16"
   },
   "engines": {
     "node": ">=18"
