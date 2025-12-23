@@ -31,7 +31,7 @@ import {
   createProviderTemplate,
   validateProvider,
 } from "./lib/provider-config.js";
-import { validateAllProviders } from "./lib/validate.js";
+import { validateAllProviders, healthCheckAllProviders, HealthCheckResult } from "./lib/validate.js";
 import { launchClaude } from "./lib/launcher.js";
 import {
   getLastProvider,
@@ -198,11 +198,24 @@ program
 program
   .command("check")
   .description("Validate all provider configurations")
-  .action(async () => {
-    console.log(chalk.cyan.bold("\n  Checking Provider Configurations\n"));
+  .option("-d, --deep", "Perform deep health check (tests API latency and model availability)")
+  .action(async (options: { deep?: boolean }) => {
+    const isDeep = options.deep;
+    const title = isDeep
+      ? "Deep Health Check (API Testing)"
+      : "Checking Provider Configurations";
+
+    console.log(chalk.cyan.bold(`\n  ${title}\n`));
+
+    if (isDeep) {
+      console.log(chalk.dim("  Testing API endpoints... This may take a moment.\n"));
+    }
 
     const allProviders = getAllProviders();
-    const results = await validateAllProviders(allProviders);
+    const results = isDeep
+      ? await healthCheckAllProviders(allProviders)
+      : await validateAllProviders(allProviders);
+
     let allValid = true;
 
     // Sort alphabetically by name
@@ -216,7 +229,30 @@ program
       const message = result?.message || "Unknown";
 
       console.log(`  ${chalk.bold(provider.name)}`);
-      console.log(`    ${status} ${message}\n`);
+      console.log(`    ${status} ${message}`);
+
+      // Show additional health check info for deep mode
+      if (isDeep && result) {
+        const healthResult = result as HealthCheckResult;
+
+        if (healthResult.latencyMs !== undefined) {
+          const latencyColor = healthResult.latencyMs < 1000
+            ? chalk.green
+            : healthResult.latencyMs < 3000
+              ? chalk.yellow
+              : chalk.red;
+          console.log(`    ${chalk.dim("Latency:")} ${latencyColor(`${healthResult.latencyMs}ms`)}`);
+        }
+
+        if (healthResult.modelName) {
+          const modelStatus = healthResult.modelAvailable
+            ? chalk.green("✓")
+            : chalk.red("✗");
+          console.log(`    ${chalk.dim("Model:")} ${healthResult.modelName} ${modelStatus}`);
+        }
+      }
+
+      console.log();
 
       if (!result?.valid) {
         allValid = false;
@@ -231,6 +267,10 @@ program
           "  Some providers need configuration. Set missing API keys in your environment.\n"
         )
       );
+    }
+
+    if (!isDeep) {
+      console.log(chalk.dim("  Tip: Use --deep to test API latency and model availability.\n"));
     }
   });
 

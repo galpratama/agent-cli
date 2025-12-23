@@ -16,79 +16,29 @@
  * - Quick config (e)
  */
 
-import React, { useState, useEffect, useCallback, useMemo } from "react";
-import { Box, Text, useInput, useApp, useStdout } from "ink";
+import React, { useState, useCallback } from "react";
+import { Box, Text, useInput, useApp } from "ink";
 import Spinner from "ink-spinner";
-import { spawn } from "child_process";
 import { Provider, ProviderCategory, CATEGORY_LABELS } from "../lib/providers.js";
-import { getAllProviders } from "../lib/provider-config.js";
-import { validateAllProviders, ValidationResult, clearValidationCache } from "../lib/validate.js";
-import {
-  getLastProvider,
-  setLastProvider,
-  getFavorites,
-  toggleFavorite,
-  getUsageStats,
-  recordUsage,
-  addSession,
-  getTagsForProvider,
-  getAliases,
-  getPinnedProviders,
-  togglePinned,
-} from "../lib/config.js";
+import { getLastProvider, getTagsForProvider } from "../lib/config.js";
 import { ProviderItem } from "./ProviderItem.js";
 import { useMouse, MouseEvent } from "../lib/useMouse.js";
 import { HEADER_LINES } from "./Header.js";
+import {
+  useProviderData,
+  useProviderNavigation,
+  useProviderActions,
+  SortMode,
+  SORT_LABELS,
+  ALL_CATEGORIES,
+} from "../hooks/index.js";
 
 // Calculate offset: header lines + margin
 const HEADER_OFFSET = HEADER_LINES;
 
-// Sort modes
-type SortMode = "name" | "usage" | "lastUsed" | "category";
-const SORT_LABELS: Record<SortMode, string> = {
-  name: "Name",
-  usage: "Usage Count",
-  lastUsed: "Last Used",
-  category: "Category",
-};
-
-// All categories for filtering
-const ALL_CATEGORIES: ProviderCategory[] = [
-  "anthropic", "openai", "google", "meta", "mistral", "cohere",
-  "chinese", "azure", "amazon", "opensource", "local", "standalone",
-  "enterprise", "custom"
-];
-
 interface ProviderListProps {
   onSelect: (provider: Provider, options?: { continueSession?: boolean; skipPermissions?: boolean }) => void;
   onOpenConfig?: () => void;
-}
-
-// Optimized fuzzy match function with early exit
-function fuzzyMatch(text: string, query: string): boolean {
-  if (!query) return true;
-  if (!text) return false;
-
-  const lowerText = text.toLowerCase();
-  const lowerQuery = query.toLowerCase();
-
-  // Direct substring match (fast path)
-  if (lowerText.includes(lowerQuery)) return true;
-
-  // Early exit: if query is longer than text, can't match
-  if (lowerQuery.length > lowerText.length) return false;
-
-  // Fuzzy match: all query chars appear in order
-  let queryIndex = 0;
-  const queryLen = lowerQuery.length;
-  const textLen = lowerText.length;
-
-  for (let i = 0; i < textLen && queryIndex < queryLen; i++) {
-    if (lowerText.charCodeAt(i) === lowerQuery.charCodeAt(queryIndex)) {
-      queryIndex++;
-    }
-  }
-  return queryIndex === queryLen;
 }
 
 export function ProviderList({
@@ -96,266 +46,75 @@ export function ProviderList({
   onOpenConfig,
 }: ProviderListProps): React.ReactElement {
   const { exit } = useApp();
-  const [selectedIndex, setSelectedIndex] = useState(0);
-  const [validationResults, setValidationResults] = useState<Map<string, ValidationResult>>(new Map());
-  const [favorites, setFavorites] = useState<string[]>(getFavorites());
-  const [pinnedProviders, setPinnedProviders] = useState<string[]>(getPinnedProviders());
-  const [continueMode, setContinueMode] = useState(false);
-  const [skipPermsMode, setSkipPermsMode] = useState(false);
-  const [lastClickTime, setLastClickTime] = useState(0);
-  const [lastClickIndex, setLastClickIndex] = useState(-1);
-  const [updating, setUpdating] = useState<string | null>(null);
-  const [updateMessage, setUpdateMessage] = useState<string | null>(null);
+
+  // UI state
+  const [sortMode, setSortMode] = useState<SortMode>("name");
+  const [categoryFilter, setCategoryFilter] = useState<ProviderCategory | null>(null);
+  const [showOnlyValid, setShowOnlyValid] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearching, setIsSearching] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
-  const [sortMode, setSortMode] = useState<SortMode>("name");
-  const [categoryFilter, setCategoryFilter] = useState<ProviderCategory | null>(null);
-  const [showOnlyValid, setShowOnlyValid] = useState(false);
-  const [statusMessage, setStatusMessage] = useState<string | null>(null);
-  const [isValidating, setIsValidating] = useState(true);
-  const [scrollOffset, setScrollOffset] = useState(0);
-  const [terminalHeight, setTerminalHeight] = useState(() => {
-    const rows = process.stdout.rows;
-    return typeof rows === "number" && Number.isFinite(rows) && rows > 0
-      ? Math.floor(rows)
-      : 24;
+  const [continueMode, setContinueMode] = useState(false);
+  const [skipPermsMode, setSkipPermsMode] = useState(false);
+
+  // Use custom hooks
+  const providerData = useProviderData({
+    sortMode,
+    categoryFilter,
+    showOnlyValid,
+    searchQuery,
   });
 
-  // Get terminal dimensions for scrollable list
-  const { stdout } = useStdout();
+  const navigation = useProviderNavigation({
+    filteredProviders: providerData.filteredProviders,
+    searchQuery,
+    categoryFilter,
+    showOnlyValid,
+  });
 
-  // Listen for terminal resize events
-  useEffect(() => {
-    const handleResize = () => {
-      const rows = stdout?.rows ?? process.stdout.rows;
-      // Ensure we always have a valid positive integer for terminal height
-      const safeRows = typeof rows === "number" && Number.isFinite(rows) && rows > 0
-        ? Math.floor(rows)
-        : 24;
-      setTerminalHeight(safeRows);
-    };
+  const actions = useProviderActions({
+    onFavoritesChange: providerData.setFavorites,
+    onPinnedChange: providerData.setPinnedProviders,
+  });
 
-    // Initial size
-    handleResize();
+  const {
+    allProviders,
+    favorites,
+    pinnedProviders,
+    usageStats,
+    aliases,
+    validationResults,
+    sortedProviders,
+    filteredProviders,
+    isValidating,
+    refreshValidation,
+  } = providerData;
 
-    // Listen for resize
-    stdout?.on("resize", handleResize);
-    process.stdout.on("resize", handleResize);
+  const {
+    selectedIndex,
+    scrollOffset,
+    listHeight: LIST_HEIGHT,
+    setSelectedIndex,
+    moveUp,
+    moveDown,
+    goToFirst,
+    goToLast,
+    selectByNumber,
+  } = navigation;
 
-    return () => {
-      stdout?.off("resize", handleResize);
-      process.stdout.off("resize", handleResize);
-    };
-  }, [stdout]);
-
-  // Reserve lines for: Header (~10) + Footer (~10) + status bar (2) + search bar (2) + box border (2) + buffer (2) = ~28
-  const RESERVED_LINES = 28;
-  // Ensure LIST_HEIGHT is always a valid positive integer (minimum 5)
-  const LIST_HEIGHT = Math.max(5, Math.floor(terminalHeight - RESERVED_LINES));
+  const {
+    updating,
+    updateMessage,
+    statusMessage,
+    showStatus,
+    toggleFavorite,
+    togglePinned,
+    handleUpdate,
+    handleLaunch,
+  } = actions;
 
   const lastProvider = getLastProvider();
-  const usageStats = getUsageStats();
-  const aliases = getAliases();
-
-  // Get all providers (built-in + custom)
-  const allProviders = getAllProviders();
-
-  // Sort providers based on current sort mode
-  const sortedProviders = useMemo(() => {
-    return [...allProviders].sort((a, b) => {
-      // Favorites always first
-      const aFav = favorites.includes(a.id);
-      const bFav = favorites.includes(b.id);
-      if (aFav && !bFav) return -1;
-      if (!aFav && bFav) return 1;
-
-      // Pinned providers second (after favorites)
-      const aPinned = pinnedProviders.includes(a.id);
-      const bPinned = pinnedProviders.includes(b.id);
-      if (aPinned && !bPinned) return -1;
-      if (!aPinned && bPinned) return 1;
-
-      // Then by sort mode
-      switch (sortMode) {
-        case "usage": {
-          const aUsage = usageStats[a.id]?.count || 0;
-          const bUsage = usageStats[b.id]?.count || 0;
-          return bUsage - aUsage;
-        }
-        case "lastUsed": {
-          const aLast = usageStats[a.id]?.lastUsed || 0;
-          const bLast = usageStats[b.id]?.lastUsed || 0;
-          return bLast - aLast;
-        }
-        case "category": {
-          const categoryOrder = ALL_CATEGORIES;
-          const aOrder = categoryOrder.indexOf(a.category);
-          const bOrder = categoryOrder.indexOf(b.category);
-          if (aOrder !== bOrder) return aOrder - bOrder;
-          return a.name.localeCompare(b.name);
-        }
-        case "name":
-        default:
-          return a.name.localeCompare(b.name);
-      }
-    });
-  }, [allProviders, favorites, pinnedProviders, sortMode, usageStats]);
-
-  // Pre-compute alias map for O(1) lookups (instead of creating in filter loop)
-  const aliasMap = useMemo(() => {
-    return new Map(aliases.map((a) => [a.providerId, a.alias]));
-  }, [aliases]);
-
-  // Pre-compute tags map for O(1) lookups (avoids repeated getTagsForProvider calls)
-  const tagsMap = useMemo(() => {
-    const map = new Map<string, string>();
-    allProviders.forEach((p) => {
-      const tags = getTagsForProvider(p.id);
-      if (tags.length > 0) {
-        map.set(p.id, tags.join(" "));
-      }
-    });
-    return map;
-  }, [allProviders]);
-
-  // Filter providers based on search query, category, and validity
-  const filteredProviders = useMemo(() => {
-    let result = sortedProviders;
-
-    // Category filter
-    if (categoryFilter) {
-      result = result.filter((p) => p.category === categoryFilter);
-    }
-
-    // Validity filter
-    if (showOnlyValid) {
-      result = result.filter((p) => validationResults.get(p.id)?.valid);
-    }
-
-    // Search filter with fuzzy matching (using pre-computed maps)
-    if (searchQuery) {
-      result = result.filter((p) => {
-        // Fast path: check ID and name first (most common matches)
-        if (fuzzyMatch(p.id, searchQuery) || fuzzyMatch(p.name, searchQuery)) {
-          return true;
-        }
-        // Then check description, alias, and tags
-        const alias = aliasMap.get(p.id) || "";
-        const tags = tagsMap.get(p.id) || "";
-        return (
-          fuzzyMatch(p.description, searchQuery) ||
-          fuzzyMatch(alias, searchQuery) ||
-          fuzzyMatch(tags, searchQuery)
-        );
-      });
-    }
-
-    return result;
-  }, [sortedProviders, categoryFilter, showOnlyValid, searchQuery, validationResults, aliasMap, tagsMap]);
-
-  // Auto-select last used provider on mount
-  useEffect(() => {
-    if (lastProvider && !searchQuery && !categoryFilter) {
-      const index = filteredProviders.findIndex((p) => p.id === lastProvider);
-      if (index >= 0) {
-        setSelectedIndex(index);
-      }
-    }
-  }, []);
-
-  // Reset selection when filters change
-  useEffect(() => {
-    if (selectedIndex >= filteredProviders.length) {
-      setSelectedIndex(Math.max(0, filteredProviders.length - 1));
-    }
-  }, [filteredProviders.length, selectedIndex]);
-
-  // Keep scroll offset synchronized with selection (virtual scrolling)
-  useEffect(() => {
-    if (filteredProviders.length === 0) {
-      setScrollOffset(0);
-      return;
-    }
-
-    // Clamp selectedIndex to valid range
-    const safeIndex = Math.max(0, Math.min(selectedIndex, filteredProviders.length - 1));
-
-    if (safeIndex < scrollOffset) {
-      setScrollOffset(safeIndex);
-    } else if (safeIndex >= scrollOffset + LIST_HEIGHT) {
-      // Ensure scroll offset is never negative
-      setScrollOffset(Math.max(0, safeIndex - LIST_HEIGHT + 1));
-    }
-  }, [selectedIndex, scrollOffset, LIST_HEIGHT, filteredProviders.length]);
-
-  // Clamp scroll offset when terminal resizes or list shrinks
-  useEffect(() => {
-    const maxOffset = Math.max(0, filteredProviders.length - LIST_HEIGHT);
-    if (scrollOffset > maxOffset) {
-      setScrollOffset(maxOffset);
-    }
-  }, [LIST_HEIGHT, filteredProviders.length, scrollOffset]);
-
-  // Reset scroll offset when filters change
-  useEffect(() => {
-    setScrollOffset(0);
-  }, [searchQuery, categoryFilter, showOnlyValid]);
-
-  // Validate providers on mount
-  useEffect(() => {
-    setIsValidating(true);
-    validateAllProviders(allProviders).then((results) => {
-      setValidationResults(results);
-      setIsValidating(false);
-    });
-  }, [allProviders.length]);
-
-  // Show status message temporarily
-  const showStatus = useCallback((message: string) => {
-    setStatusMessage(message);
-    setTimeout(() => setStatusMessage(null), 2000);
-  }, []);
-
-  // Refresh validation (clears cache for fresh results)
-  const refreshValidation = useCallback(() => {
-    setIsValidating(true);
-    showStatus("Refreshing...");
-    clearValidationCache(); // Clear cache to force fresh validation
-    validateAllProviders(allProviders).then((results) => {
-      setValidationResults(results);
-      setIsValidating(false);
-      showStatus("Validation refreshed!");
-    });
-  }, [allProviders, showStatus]);
-
-  // Handle update for standalone providers
-  const handleUpdate = useCallback((provider: Provider) => {
-    if (!provider.updateCmd || provider.updateCmd.length === 0 || updating) return;
-
-    setUpdating(provider.id);
-    setUpdateMessage(null);
-
-    const [cmd, ...args] = provider.updateCmd;
-    const child = spawn(cmd, args, { stdio: "pipe" });
-
-    child.on("close", (code) => {
-      setUpdating(null);
-      if (code === 0) {
-        setUpdateMessage(`✓ ${provider.name} updated!`);
-      } else {
-        setUpdateMessage(`✗ ${provider.name} update failed`);
-      }
-      setTimeout(() => setUpdateMessage(null), 3000);
-    });
-
-    child.on("error", () => {
-      setUpdating(null);
-      setUpdateMessage(`✗ ${provider.name} update failed`);
-      setTimeout(() => setUpdateMessage(null), 3000);
-    });
-  }, [updating]);
 
   // Calculate box boundaries for mouse scroll detection
   const boxTopLine = HEADER_OFFSET + 3;
@@ -367,18 +126,16 @@ export function ProviderList({
 
     if (event.type === "scroll") {
       const mouseY = event.y;
-      // Only scroll when mouse is inside the box area
       if (mouseY >= boxTopLine && mouseY <= boxBottomLine) {
         if (event.button === "wheelUp") {
-          setSelectedIndex((prev) => prev > 0 ? prev - 1 : filteredProviders.length - 1);
+          moveUp();
         } else if (event.button === "wheelDown") {
-          setSelectedIndex((prev) => prev < filteredProviders.length - 1 ? prev + 1 : 0);
+          moveDown();
         }
       }
     }
-  }, [filteredProviders.length, showHelp, showDetails, boxTopLine, boxBottomLine]);
+  }, [showHelp, showDetails, boxTopLine, boxBottomLine, moveUp, moveDown]);
 
-  // Enable mouse support
   useMouse({ onMouse: handleMouse });
 
   // Cycle through sort modes
@@ -394,14 +151,12 @@ export function ProviderList({
   useInput((input, key) => {
     // Help overlay takes priority
     if (showHelp) {
-      // Any key closes help overlay
       setShowHelp(false);
       return;
     }
 
     // Details panel
     if (showDetails) {
-      // Any key closes details panel
       setShowDetails(false);
       return;
     }
@@ -424,9 +179,9 @@ export function ProviderList({
 
     // Navigation
     if (key.upArrow || input === "k") {
-      setSelectedIndex((prev) => prev > 0 ? prev - 1 : filteredProviders.length - 1);
+      moveUp();
     } else if (key.downArrow || input === "j") {
-      setSelectedIndex((prev) => prev < filteredProviders.length - 1 ? prev + 1 : 0);
+      moveDown();
     }
     // Help overlay
     else if (input === "?") {
@@ -436,13 +191,13 @@ export function ProviderList({
     else if (input === "i") {
       setShowDetails(true);
     }
-    // Start search with /
+    // Start search
     else if (input === "/") {
       setIsSearching(true);
       setSearchQuery("");
       setSelectedIndex(0);
     }
-    // Clear all filters with Escape (clears in order: search -> category -> valid only)
+    // Clear filters with Escape
     else if (key.escape) {
       if (searchQuery) {
         setSearchQuery("");
@@ -458,12 +213,10 @@ export function ProviderList({
         showStatus("Showing all providers");
       }
     }
-    // Quick select by number (1-9, 0 = 10) - only when no category filter active
+    // Quick select by number (1-9, 0 = 10)
     else if (/^[0-9]$/.test(input) && !key.ctrl) {
       const num = input === "0" ? 9 : parseInt(input, 10) - 1;
-      if (num < filteredProviders.length) {
-        setSelectedIndex(num);
-      }
+      selectByNumber(num);
     }
     // Category filter with Ctrl+1-9
     else if (key.ctrl && /^[1-9]$/.test(input)) {
@@ -484,14 +237,7 @@ export function ProviderList({
     else if (key.return) {
       const selected = filteredProviders[selectedIndex];
       if (selected) {
-        setLastProvider(selected.id);
-        recordUsage(selected.id);
-        addSession({
-          providerId: selected.id,
-          timestamp: Date.now(),
-          continueSession: continueMode,
-          skipPermissions: skipPermsMode,
-        });
+        handleLaunch(selected, { continueSession: continueMode, skipPermissions: skipPermsMode });
         onSelect(selected, { continueSession: continueMode, skipPermissions: skipPermsMode });
       }
     }
@@ -499,8 +245,7 @@ export function ProviderList({
     else if (input === "f") {
       const selected = filteredProviders[selectedIndex];
       if (selected) {
-        const isFav = toggleFavorite(selected.id);
-        setFavorites(getFavorites());
+        const isFav = toggleFavorite(selected);
         showStatus(isFav ? `★ ${selected.name} favorited` : `☆ ${selected.name} unfavorited`);
       }
     }
@@ -508,8 +253,7 @@ export function ProviderList({
     else if (input === "p") {
       const selected = filteredProviders[selectedIndex];
       if (selected) {
-        const isPinned = togglePinned(selected.id);
-        setPinnedProviders(getPinnedProviders());
+        const isPinned = togglePinned(selected);
         showStatus(isPinned ? `📌 ${selected.name} pinned` : `${selected.name} unpinned`);
       }
     }
@@ -519,7 +263,6 @@ export function ProviderList({
       setContinueMode(newMode);
       const selected = filteredProviders[selectedIndex];
       if (newMode && selected) {
-        // Check if provider supports continue mode
         const supportsIt = selected.type === "api" || selected.continueArg;
         if (!supportsIt) {
           showStatus(`--continue enabled (${selected.name} may not support it)`);
@@ -536,7 +279,6 @@ export function ProviderList({
       setSkipPermsMode(newMode);
       const selected = filteredProviders[selectedIndex];
       if (newMode && selected) {
-        // Check if provider supports skip-permissions mode
         const supportsIt = selected.type === "api" || selected.skipPermissionsArg;
         if (!supportsIt) {
           showStatus(`--skip-perms enabled (${selected.name} may not support it)`);
@@ -547,19 +289,13 @@ export function ProviderList({
         showStatus("--skip-perms disabled");
       }
     }
-    // Go to first item
+    // Go to first/last
     else if (input === "g") {
-      if (filteredProviders.length > 0) {
-        setSelectedIndex(0);
-      }
+      goToFirst();
+    } else if (input === "G") {
+      goToLast();
     }
-    // Go to last item
-    else if (input === "G") {
-      if (filteredProviders.length > 0) {
-        setSelectedIndex(filteredProviders.length - 1);
-      }
-    }
-    // Update selected provider (any provider with updateCmd configured)
+    // Update provider
     else if (input === "u") {
       const selected = filteredProviders[selectedIndex];
       if (!selected) return;
@@ -583,8 +319,9 @@ export function ProviderList({
     // Refresh validation
     else if (input === "r") {
       refreshValidation();
+      showStatus("Refreshing...");
     }
-    // Open config (if handler provided)
+    // Open config
     else if (input === "e" && onOpenConfig) {
       onOpenConfig();
     }
@@ -736,7 +473,7 @@ export function ProviderList({
         paddingX={1}
         height={Math.max(5, Math.min(LIST_HEIGHT, filteredProviders.length) + 4)}
       >
-        {/* Scroll indicator - top (always reserves space) */}
+        {/* Scroll indicator - top */}
         <Box justifyContent="center" height={1}>
           {scrollOffset > 0 ? (
             <Text color="gray">▲ {scrollOffset} more above</Text>
@@ -782,7 +519,7 @@ export function ProviderList({
           </Box>
         )}
 
-        {/* Scroll indicator - bottom (always reserves space) */}
+        {/* Scroll indicator - bottom */}
         <Box justifyContent="center" height={1}>
           {scrollOffset + LIST_HEIGHT < filteredProviders.length ? (
             <Text color="gray">▼ {filteredProviders.length - scrollOffset - LIST_HEIGHT} more below</Text>
