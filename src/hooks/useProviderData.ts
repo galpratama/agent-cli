@@ -7,6 +7,7 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import { Provider, ProviderCategory, CATEGORY_LABELS } from "../lib/providers.js";
 import { getAllProviders } from "../lib/provider-config.js";
 import { validateAllProviders, ValidationResult, clearValidationCache } from "../lib/validate.js";
+import { fuzzyMatch } from "../lib/utils.js";
 import {
   getFavorites,
   getUsageStats,
@@ -34,32 +35,8 @@ export const ALL_CATEGORIES: ProviderCategory[] = [
   "enterprise", "custom"
 ];
 
-// Optimized fuzzy match function with early exit
-export function fuzzyMatch(text: string, query: string): boolean {
-  if (!query) return true;
-  if (!text) return false;
-
-  const lowerText = text.toLowerCase();
-  const lowerQuery = query.toLowerCase();
-
-  // Direct substring match (fast path)
-  if (lowerText.includes(lowerQuery)) return true;
-
-  // Early exit: if query is longer than text, can't match
-  if (lowerQuery.length > lowerText.length) return false;
-
-  // Fuzzy match: all query chars appear in order
-  let queryIndex = 0;
-  const queryLen = lowerQuery.length;
-  const textLen = lowerText.length;
-
-  for (let i = 0; i < textLen && queryIndex < queryLen; i++) {
-    if (lowerText.charCodeAt(i) === lowerQuery.charCodeAt(queryIndex)) {
-      queryIndex++;
-    }
-  }
-  return queryIndex === queryLen;
-}
+// Re-export fuzzyMatch for backwards compatibility
+export { fuzzyMatch } from "../lib/utils.js";
 
 export interface UseProviderDataOptions {
   sortMode: SortMode;

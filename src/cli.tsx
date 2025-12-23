@@ -33,6 +33,7 @@ import {
 } from "./lib/provider-config.js";
 import { validateAllProviders, healthCheckAllProviders, HealthCheckResult } from "./lib/validate.js";
 import { launchClaude } from "./lib/launcher.js";
+import { getProviderOrExit } from "./lib/utils.js";
 import {
   getLastProvider,
   setLastProvider,
@@ -60,6 +61,19 @@ import {
   togglePinned,
   isPinned,
 } from "./lib/config.js";
+import {
+  listCommand,
+  checkCommand,
+  profileLaunchCommand,
+  profileSaveCommand,
+  profileListCommand,
+  profileDeleteCommand,
+  aliasCommand,
+  tagCommand,
+  pinCommand,
+  historyCommand,
+  statsCommand,
+} from "./commands/index.js";
 
 // Get the package directory
 const __filename = fileURLToPath(import.meta.url);
@@ -170,29 +184,7 @@ program
   .alias("ls")
   .description("List all available providers")
   .action(async () => {
-    console.log(chalk.cyan.bold("\n  AI Agent - Available Providers\n"));
-
-    const allProviders = getAllProviders();
-    const results = await validateAllProviders(allProviders);
-    const lastProvider = getLastProvider();
-
-    // Sort alphabetically by name
-    const sortedProviders = [...allProviders].sort((a, b) => a.name.localeCompare(b.name));
-
-    sortedProviders.forEach((provider) => {
-      const result = results.get(provider.id);
-      const status = result?.valid ? chalk.green("●") : chalk.red("○");
-      const isLast = provider.id === lastProvider;
-      const lastIndicator = isLast ? chalk.blue(" ↺") : "";
-
-      console.log(
-        `  ${status} ${chalk.cyan(provider.id.padEnd(14))} ${provider.description}${lastIndicator}`
-      );
-    });
-
-    console.log(
-      `\n  ${chalk.green("●")} Ready  ${chalk.red("○")} Unavailable  ${chalk.blue("↺")} Last used\n`
-    );
+    await listCommand();
   });
 
 program
@@ -200,78 +192,7 @@ program
   .description("Validate all provider configurations")
   .option("-d, --deep", "Perform deep health check (tests API latency and model availability)")
   .action(async (options: { deep?: boolean }) => {
-    const isDeep = options.deep;
-    const title = isDeep
-      ? "Deep Health Check (API Testing)"
-      : "Checking Provider Configurations";
-
-    console.log(chalk.cyan.bold(`\n  ${title}\n`));
-
-    if (isDeep) {
-      console.log(chalk.dim("  Testing API endpoints... This may take a moment.\n"));
-    }
-
-    const allProviders = getAllProviders();
-    const results = isDeep
-      ? await healthCheckAllProviders(allProviders)
-      : await validateAllProviders(allProviders);
-
-    let allValid = true;
-
-    // Sort alphabetically by name
-    const sortedProviders = [...allProviders].sort((a, b) => a.name.localeCompare(b.name));
-
-    sortedProviders.forEach((provider) => {
-      const result = results.get(provider.id);
-      const status = result?.valid
-        ? chalk.green("✓")
-        : chalk.red("✗");
-      const message = result?.message || "Unknown";
-
-      console.log(`  ${chalk.bold(provider.name)}`);
-      console.log(`    ${status} ${message}`);
-
-      // Show additional health check info for deep mode
-      if (isDeep && result) {
-        const healthResult = result as HealthCheckResult;
-
-        if (healthResult.latencyMs !== undefined) {
-          const latencyColor = healthResult.latencyMs < 1000
-            ? chalk.green
-            : healthResult.latencyMs < 3000
-              ? chalk.yellow
-              : chalk.red;
-          console.log(`    ${chalk.dim("Latency:")} ${latencyColor(`${healthResult.latencyMs}ms`)}`);
-        }
-
-        if (healthResult.modelName) {
-          const modelStatus = healthResult.modelAvailable
-            ? chalk.green("✓")
-            : chalk.red("✗");
-          console.log(`    ${chalk.dim("Model:")} ${healthResult.modelName} ${modelStatus}`);
-        }
-      }
-
-      console.log();
-
-      if (!result?.valid) {
-        allValid = false;
-      }
-    });
-
-    if (allValid) {
-      console.log(chalk.green("  ✓ All providers are properly configured!\n"));
-    } else {
-      console.log(
-        chalk.yellow(
-          "  Some providers need configuration. Set missing API keys in your environment.\n"
-        )
-      );
-    }
-
-    if (!isDeep) {
-      console.log(chalk.dim("  Tip: Use --deep to test API latency and model availability.\n"));
-    }
+    await checkCommand(options);
   });
 
 program
@@ -422,38 +343,7 @@ program
   .description("Launch a saved profile")
   .argument("<name>", "Profile name to launch")
   .action(async (name: string) => {
-    const profile = getProfile(name);
-    if (!profile) {
-      console.error(chalk.red(`Profile not found: ${name}`));
-      console.log("\nAvailable profiles:");
-      getProfiles().forEach((p) => {
-        console.log(`  ${chalk.cyan(p.name)} - ${p.providerId}`);
-      });
-      process.exit(1);
-    }
-
-    const provider = getProviderById(profile.providerId);
-    if (!provider) {
-      console.error(chalk.red(`Provider not found: ${profile.providerId}`));
-      process.exit(1);
-    }
-
-    console.log(chalk.cyan(`> Launching profile "${name}" (${provider.name})...`));
-    setLastProvider(provider.id);
-    recordUsage(provider.id);
-    addSession({
-      providerId: provider.id,
-      timestamp: Date.now(),
-      continueSession: profile.continueSession,
-      skipPermissions: profile.skipPermissions,
-    });
-
-    await launchClaude({
-      provider,
-      args: profile.args || [],
-      continueSession: profile.continueSession,
-      skipPermissions: profile.skipPermissions,
-    });
+    await profileLaunchCommand(name);
   });
 
 program
@@ -465,23 +355,7 @@ program
   .option("-c, --continue", "Enable --continue flag")
   .option("-y, --skip-permissions", "Enable --dangerously-skip-permissions flag")
   .action((name: string, options: { provider: string; continue?: boolean; skipPermissions?: boolean }) => {
-    const provider = getProviderById(options.provider);
-    if (!provider) {
-      console.error(chalk.red(`Unknown provider: ${options.provider}`));
-      process.exit(1);
-    }
-
-    saveProfile({
-      name,
-      providerId: options.provider,
-      continueSession: options.continue,
-      skipPermissions: options.skipPermissions,
-    });
-
-    console.log(chalk.green(`✓ Profile "${name}" saved!`));
-    console.log(`  Provider: ${provider.name}`);
-    if (options.continue) console.log(`  --continue: enabled`);
-    if (options.skipPermissions) console.log(`  --skip-permissions: enabled`);
+    profileSaveCommand(name, options);
   });
 
 program
@@ -489,21 +363,7 @@ program
   .alias("pl")
   .description("List all saved profiles")
   .action(() => {
-    const profiles = getProfiles();
-    if (profiles.length === 0) {
-      console.log(chalk.gray("\n  No profiles saved. Use 'agent profile-save' to create one.\n"));
-      return;
-    }
-
-    console.log(chalk.cyan.bold("\n  Saved Profiles\n"));
-    profiles.forEach((p) => {
-      const flags = [];
-      if (p.continueSession) flags.push("--continue");
-      if (p.skipPermissions) flags.push("--skip-perms");
-      const flagStr = flags.length ? chalk.gray(` [${flags.join(", ")}]`) : "";
-      console.log(`  ${chalk.cyan(p.name.padEnd(15))} ${p.providerId}${flagStr}`);
-    });
-    console.log("");
+    profileListCommand();
   });
 
 program
@@ -512,11 +372,7 @@ program
   .description("Delete a saved profile")
   .argument("<name>", "Profile name to delete")
   .action((name: string) => {
-    if (deleteProfile(name)) {
-      console.log(chalk.green(`✓ Profile "${name}" deleted.`));
-    } else {
-      console.error(chalk.red(`Profile not found: ${name}`));
-    }
+    profileDeleteCommand(name);
   });
 
 // ==================== SESSION HISTORY ====================
@@ -527,30 +383,7 @@ program
   .description("Show session history")
   .option("-c, --clear", "Clear session history")
   .action((options: { clear?: boolean }) => {
-    if (options.clear) {
-      clearSessions();
-      console.log(chalk.green("✓ Session history cleared."));
-      return;
-    }
-
-    const sessions = getSessions();
-    if (sessions.length === 0) {
-      console.log(chalk.gray("\n  No session history.\n"));
-      return;
-    }
-
-    console.log(chalk.cyan.bold("\n  Session History\n"));
-    sessions.slice(0, 20).forEach((s, i) => {
-      const provider = getProviderById(s.providerId);
-      const date = new Date(s.timestamp);
-      const timeStr = date.toLocaleString();
-      const flags = [];
-      if (s.continueSession) flags.push("-c");
-      if (s.skipPermissions) flags.push("-y");
-      const flagStr = flags.length ? chalk.gray(` ${flags.join(" ")}`) : "";
-      console.log(`  ${chalk.gray((i + 1).toString().padStart(2))}. ${chalk.cyan(provider?.name || s.providerId)} ${chalk.gray(timeStr)}${flagStr}`);
-    });
-    console.log("");
+    historyCommand(options);
   });
 
 // ==================== USAGE STATISTICS ====================
@@ -560,27 +393,7 @@ program
   .description("Show usage statistics")
   .option("-c, --clear", "Clear usage statistics")
   .action((options: { clear?: boolean }) => {
-    if (options.clear) {
-      clearUsageStats();
-      console.log(chalk.green("✓ Usage statistics cleared."));
-      return;
-    }
-
-    const stats = getUsageStats();
-    const entries = Object.entries(stats).sort((a, b) => b[1].count - a[1].count);
-
-    if (entries.length === 0) {
-      console.log(chalk.gray("\n  No usage statistics yet.\n"));
-      return;
-    }
-
-    console.log(chalk.cyan.bold("\n  Usage Statistics\n"));
-    entries.forEach(([providerId, data]) => {
-      const provider = getProviderById(providerId);
-      const lastUsed = new Date(data.lastUsed).toLocaleDateString();
-      console.log(`  ${chalk.cyan((provider?.name || providerId).padEnd(15))} ${data.count.toString().padStart(4)} uses  ${chalk.gray(`Last: ${lastUsed}`)}`);
-    });
-    console.log("");
+    statsCommand(options);
   });
 
 // ==================== UPDATE ALL ====================
@@ -595,63 +408,7 @@ program
   .option("-r, --remove", "Remove the alias")
   .option("-l, --list", "List all aliases")
   .action((aliasName?: string, providerId?: string, options?: { remove?: boolean; list?: boolean }) => {
-    // List all aliases
-    if (options?.list || (!aliasName && !providerId)) {
-      const aliases = getAliases();
-      if (aliases.length === 0) {
-        console.log(chalk.gray("\n  No aliases defined.\n"));
-        console.log(chalk.gray("  Usage: agent alias <name> <provider-id>"));
-        console.log(chalk.gray("  Example: agent alias gpt openrouter-gpt4\n"));
-        return;
-      }
-
-      console.log(chalk.cyan.bold("\n  Provider Aliases\n"));
-      aliases.forEach(({ alias, providerId: pid }) => {
-        const provider = getProviderById(pid);
-        const status = provider ? chalk.green("●") : chalk.red("○");
-        console.log(`  ${status} ${chalk.cyan(alias.padEnd(12))} → ${pid}`);
-      });
-      console.log(chalk.gray(`\n  ${chalk.green("●")} Valid  ${chalk.red("○")} Provider not found\n`));
-      return;
-    }
-
-    // Remove alias
-    if (options?.remove && aliasName) {
-      if (removeAlias(aliasName)) {
-        console.log(chalk.green(`✓ Alias "${aliasName}" removed.`));
-      } else {
-        console.error(chalk.red(`Alias not found: ${aliasName}`));
-      }
-      return;
-    }
-
-    // Show single alias
-    if (aliasName && !providerId) {
-      const targetId = getProviderByAlias(aliasName);
-      if (targetId) {
-        const provider = getProviderById(targetId);
-        console.log(`  ${chalk.cyan(aliasName)} → ${targetId}${provider ? "" : chalk.red(" (not found)")}`);
-      } else {
-        console.log(chalk.gray(`  Alias "${aliasName}" not defined.`));
-      }
-      return;
-    }
-
-    // Create/update alias
-    if (aliasName && providerId) {
-      const provider = getProviderById(providerId);
-      if (!provider) {
-        console.error(chalk.red(`Unknown provider: ${providerId}`));
-        console.log("\nAvailable providers:");
-        getAllProviders().slice(0, 10).forEach((p) => {
-          console.log(`  ${chalk.cyan(p.id)}`);
-        });
-        process.exit(1);
-      }
-
-      setAlias(aliasName, providerId);
-      console.log(chalk.green(`✓ Alias created: ${aliasName} → ${providerId}`));
-    }
+    aliasCommand(aliasName, providerId, options);
   });
 
 // ==================== TAGS ====================
@@ -665,93 +422,7 @@ program
   .option("-l, --list", "List all tags")
   .option("-f, --find <tag>", "Find providers with a specific tag")
   .action((providerId?: string, tags?: string[], options?: { remove?: string; list?: boolean; find?: string }) => {
-    // List all tags
-    if (options?.list) {
-      const allTags = getAllTags();
-      if (allTags.length === 0) {
-        console.log(chalk.gray("\n  No tags defined.\n"));
-        console.log(chalk.gray("  Usage: agent tag <provider-id> <tag1> <tag2>..."));
-        console.log(chalk.gray("  Example: agent tag openrouter fast cheap\n"));
-        return;
-      }
-
-      console.log(chalk.cyan.bold("\n  All Tags\n"));
-      allTags.forEach((tag) => {
-        const providers = getProvidersByTag(tag);
-        console.log(`  ${chalk.yellow(`#${tag}`)} (${providers.length} provider${providers.length === 1 ? "" : "s"})`);
-      });
-      console.log("");
-      return;
-    }
-
-    // Find providers by tag
-    if (options?.find) {
-      const providers = getProvidersByTag(options.find);
-      if (providers.length === 0) {
-        console.log(chalk.gray(`\n  No providers with tag "${options.find}".\n`));
-        return;
-      }
-
-      console.log(chalk.cyan.bold(`\n  Providers with tag #${options.find}\n`));
-      providers.forEach((pid) => {
-        const provider = getProviderById(pid);
-        console.log(`  ${chalk.cyan(pid.padEnd(15))} ${provider?.description || ""}`);
-      });
-      console.log("");
-      return;
-    }
-
-    // Show tags for provider
-    if (providerId && (!tags || tags.length === 0) && !options?.remove) {
-      const provider = getProviderById(providerId);
-      if (!provider) {
-        console.error(chalk.red(`Unknown provider: ${providerId}`));
-        process.exit(1);
-      }
-
-      const providerTags = getTagsForProvider(providerId);
-      if (providerTags.length === 0) {
-        console.log(chalk.gray(`\n  No tags for ${providerId}.\n`));
-      } else {
-        console.log(`\n  ${chalk.cyan(providerId)}: ${providerTags.map((t) => chalk.yellow(`#${t}`)).join(" ")}\n`);
-      }
-      return;
-    }
-
-    // Remove tag
-    if (options?.remove && providerId) {
-      removeTagFromProvider(providerId, options.remove);
-      console.log(chalk.green(`✓ Removed tag #${options.remove} from ${providerId}`));
-      return;
-    }
-
-    // Add tags
-    if (providerId && tags && tags.length > 0) {
-      const provider = getProviderById(providerId);
-      if (!provider) {
-        console.error(chalk.red(`Unknown provider: ${providerId}`));
-        process.exit(1);
-      }
-
-      // Handle comma-separated tags in a single argument
-      const allTags = tags.flatMap((t) => t.split(",").map((s) => s.trim().toLowerCase()).filter(Boolean));
-
-      allTags.forEach((tag) => {
-        addTagToProvider(providerId, tag);
-      });
-
-      console.log(chalk.green(`✓ Added tags to ${providerId}: ${allTags.map((t) => `#${t}`).join(" ")}`));
-      return;
-    }
-
-    // No arguments - show help
-    console.log(chalk.cyan.bold("\n  Tag Management\n"));
-    console.log("  Usage:");
-    console.log("    agent tag -l                    List all tags");
-    console.log("    agent tag -f <tag>              Find providers with tag");
-    console.log("    agent tag <provider>            Show tags for provider");
-    console.log("    agent tag <provider> <tags...>  Add tags to provider");
-    console.log("    agent tag <provider> -r <tag>   Remove tag from provider\n");
+    tagCommand(providerId, tags, options);
   });
 
 // ==================== PINNED PROVIDERS ====================
@@ -762,38 +433,7 @@ program
   .argument("[provider]", "Provider ID to pin/unpin")
   .option("-l, --list", "List all pinned providers")
   .action((providerId?: string, options?: { list?: boolean }) => {
-    // List pinned providers
-    if (options?.list || !providerId) {
-      const pinned = getPinnedProviders();
-      if (pinned.length === 0) {
-        console.log(chalk.gray("\n  No pinned providers.\n"));
-        console.log(chalk.gray("  Usage: agent pin <provider-id>"));
-        console.log(chalk.gray("  Pinned providers appear at the top of the list.\n"));
-        return;
-      }
-
-      console.log(chalk.cyan.bold("\n  Pinned Providers\n"));
-      pinned.forEach((pid) => {
-        const provider = getProviderById(pid);
-        console.log(`  📌 ${chalk.cyan(pid.padEnd(15))} ${provider?.description || chalk.red("(not found)")}`);
-      });
-      console.log(chalk.gray("\n  Use 'agent pin <id>' again to unpin.\n"));
-      return;
-    }
-
-    // Toggle pin
-    const provider = getProviderById(providerId);
-    if (!provider) {
-      console.error(chalk.red(`Unknown provider: ${providerId}`));
-      process.exit(1);
-    }
-
-    const nowPinned = togglePinned(providerId);
-    if (nowPinned) {
-      console.log(chalk.green(`📌 Pinned: ${providerId}`));
-    } else {
-      console.log(chalk.green(`✓ Unpinned: ${providerId}`));
-    }
+    pinCommand(providerId, options);
   });
 
 program

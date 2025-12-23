@@ -7,6 +7,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useStdout } from "ink";
 import { Provider } from "../lib/providers.js";
 import { getLastProvider } from "../lib/config.js";
+import { getSafeTerminalHeight, calculateListHeight } from "../lib/utils.js";
 
 export interface UseProviderNavigationOptions {
   filteredProviders: Provider[];
@@ -44,28 +45,22 @@ export function useProviderNavigation(options: UseProviderNavigationOptions): Us
   const { stdout } = useStdout();
 
   // Terminal height with safe default
-  const [terminalHeight, setTerminalHeight] = useState(() => {
-    const rows = process.stdout.rows;
-    return typeof rows === "number" && Number.isFinite(rows) && rows > 0
-      ? Math.floor(rows)
-      : 24;
-  });
+  const [terminalHeight, setTerminalHeight] = useState(() =>
+    getSafeTerminalHeight(process.stdout.rows)
+  );
 
   // Selection and scroll state
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [scrollOffset, setScrollOffset] = useState(0);
 
   // Calculate list height
-  const listHeight = Math.max(5, Math.floor(terminalHeight - reservedLines));
+  const listHeight = calculateListHeight(terminalHeight, reservedLines);
 
   // Listen for terminal resize events
   useEffect(() => {
     const handleResize = () => {
       const rows = stdout?.rows ?? process.stdout.rows;
-      const safeRows = typeof rows === "number" && Number.isFinite(rows) && rows > 0
-        ? Math.floor(rows)
-        : 24;
-      setTerminalHeight(safeRows);
+      setTerminalHeight(getSafeTerminalHeight(rows));
     };
 
     handleResize();

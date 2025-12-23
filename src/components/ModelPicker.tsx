@@ -13,38 +13,12 @@ import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { Box, Text, useInput, useStdout } from "ink";
 import { Provider } from "../lib/providers.js";
 import { getLastModelForProvider } from "../lib/config.js";
+import { fuzzyMatch, getSafeTerminalHeight, calculateListHeight } from "../lib/utils.js";
 
 interface ModelPickerProps {
   provider: Provider;
   onSelect: (model: string) => void;
   onBack: () => void;
-}
-
-// Fuzzy match function
-function fuzzyMatch(text: string, query: string): boolean {
-  if (!query) return true;
-  if (!text) return false;
-
-  const lowerText = text.toLowerCase();
-  const lowerQuery = query.toLowerCase();
-
-  // Direct substring match (fast path)
-  if (lowerText.includes(lowerQuery)) return true;
-
-  // Early exit: if query is longer than text, can't match
-  if (lowerQuery.length > lowerText.length) return false;
-
-  // Fuzzy match: all query chars appear in order
-  let queryIndex = 0;
-  const queryLen = lowerQuery.length;
-  const textLen = lowerText.length;
-
-  for (let i = 0; i < textLen && queryIndex < queryLen; i++) {
-    if (lowerText.charCodeAt(i) === lowerQuery.charCodeAt(queryIndex)) {
-      queryIndex++;
-    }
-  }
-  return queryIndex === queryLen;
 }
 
 export function ModelPicker({
@@ -57,12 +31,9 @@ export function ModelPicker({
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearching, setIsSearching] = useState(false);
   const [scrollOffset, setScrollOffset] = useState(0);
-  const [terminalHeight, setTerminalHeight] = useState(() => {
-    const rows = process.stdout.rows;
-    return typeof rows === "number" && Number.isFinite(rows) && rows > 0
-      ? Math.floor(rows)
-      : 24;
-  });
+  const [terminalHeight, setTerminalHeight] = useState(() =>
+    getSafeTerminalHeight(process.stdout.rows)
+  );
 
   const { stdout } = useStdout();
 
@@ -70,11 +41,7 @@ export function ModelPicker({
   useEffect(() => {
     const handleResize = () => {
       const rows = stdout?.rows ?? process.stdout.rows;
-      // Ensure we always have a valid positive integer for terminal height
-      const safeRows = typeof rows === "number" && Number.isFinite(rows) && rows > 0
-        ? Math.floor(rows)
-        : 24;
-      setTerminalHeight(safeRows);
+      setTerminalHeight(getSafeTerminalHeight(rows));
     };
 
     handleResize();
@@ -89,8 +56,7 @@ export function ModelPicker({
 
   // Reserve lines for header, footer, search bar, borders
   const RESERVED_LINES = 12;
-  // Ensure LIST_HEIGHT is always a valid positive integer (minimum 5)
-  const LIST_HEIGHT = Math.max(5, Math.floor(terminalHeight - RESERVED_LINES));
+  const LIST_HEIGHT = calculateListHeight(terminalHeight, RESERVED_LINES);
 
   // Pre-select last used model on mount
   useEffect(() => {
