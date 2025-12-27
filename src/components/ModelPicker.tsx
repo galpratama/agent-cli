@@ -15,6 +15,24 @@ import { Provider } from "../lib/providers.js";
 import { getLastModelForProvider } from "../lib/config.js";
 import { fuzzyMatch, getSafeTerminalHeight, calculateListHeight } from "../lib/utils.js";
 
+type PricingFilter = "all" | "free" | "paid";
+
+const PRICING_FILTER_LABELS: Record<PricingFilter, string> = {
+  all: "All",
+  free: "Free",
+  paid: "Paid",
+};
+
+const PRICING_FILTER_COLORS: Record<PricingFilter, string> = {
+  all: "white",
+  free: "green",
+  paid: "yellow",
+};
+
+function isModelFree(model: string): boolean {
+  return model.endsWith(":free");
+}
+
 interface ModelPickerProps {
   provider: Provider;
   onSelect: (model: string) => void;
@@ -30,6 +48,7 @@ export function ModelPicker({
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearching, setIsSearching] = useState(false);
+  const [pricingFilter, setPricingFilter] = useState<PricingFilter>("all");
   const [scrollOffset, setScrollOffset] = useState(0);
   const [terminalHeight, setTerminalHeight] = useState(() =>
     getSafeTerminalHeight(process.stdout.rows)
@@ -69,11 +88,39 @@ export function ModelPicker({
     }
   }, [provider.id, models]);
 
-  // Filter models based on search query
+  // Check if provider has any free models
+  const hasFreeModels = useMemo(() => models.some(isModelFree), [models]);
+  const hasPaidModels = useMemo(() => models.some((m) => !isModelFree(m)), [models]);
+
+  // Filter models based on search query and pricing filter
   const filteredModels = useMemo(() => {
-    if (!searchQuery) return models;
-    return models.filter((model) => fuzzyMatch(model, searchQuery));
-  }, [models, searchQuery]);
+    let result = models;
+
+    // Apply pricing filter first
+    if (pricingFilter === "free") {
+      result = result.filter(isModelFree);
+    } else if (pricingFilter === "paid") {
+      result = result.filter((m) => !isModelFree(m));
+    }
+
+    // Then apply search filter
+    if (searchQuery) {
+      result = result.filter((model) => fuzzyMatch(model, searchQuery));
+    }
+
+    return result;
+  }, [models, searchQuery, pricingFilter]);
+
+  // Cycle through pricing filters
+  const cyclePricingFilter = useCallback(() => {
+    setPricingFilter((prev) => {
+      if (prev === "all") return "free";
+      if (prev === "free") return "paid";
+      return "all";
+    });
+    setSelectedIndex(0);
+    setScrollOffset(0);
+  }, []);
 
   // Reset selection when filters change
   useEffect(() => {
@@ -178,6 +225,12 @@ export function ModelPicker({
         onSelect(selected);
       }
     }
+    // Cycle pricing filter with Tab or 'f'
+    else if (key.tab || input === "f") {
+      if (hasFreeModels || hasPaidModels) {
+        cyclePricingFilter();
+      }
+    }
   });
 
   const lastModel = getLastModelForProvider(provider.id);
@@ -190,6 +243,25 @@ export function ModelPicker({
           {provider.icon} {provider.name}
         </Text>
         <Text dimColor> - Select a model</Text>
+        {/* Pricing filter indicator */}
+        {hasFreeModels && (
+          <Text>
+            {"  "}
+            <Text dimColor>[</Text>
+            <Text color={pricingFilter === "all" ? PRICING_FILTER_COLORS.all : "gray"} bold={pricingFilter === "all"}>
+              All
+            </Text>
+            <Text dimColor>/</Text>
+            <Text color={pricingFilter === "free" ? PRICING_FILTER_COLORS.free : "gray"} bold={pricingFilter === "free"}>
+              Free
+            </Text>
+            <Text dimColor>/</Text>
+            <Text color={pricingFilter === "paid" ? PRICING_FILTER_COLORS.paid : "gray"} bold={pricingFilter === "paid"}>
+              Paid
+            </Text>
+            <Text dimColor>]</Text>
+          </Text>
+        )}
       </Box>
 
       {/* Search bar */}
@@ -256,7 +328,9 @@ export function ModelPicker({
             <Text color="gray">
               {searchQuery
                 ? `No models match "${searchQuery}"`
-                : "No models available"}
+                : pricingFilter !== "all"
+                  ? `No ${pricingFilter} models available`
+                  : "No models available"}
             </Text>
           </Box>
         )}
@@ -278,6 +352,11 @@ export function ModelPicker({
         <Text dimColor>
           <Text color="cyan">Enter</Text> select{" "}
           <Text color="cyan">/</Text> search{" "}
+          {hasFreeModels && (
+            <>
+              <Text color="cyan">Tab</Text> filter{" "}
+            </>
+          )}
           <Text color="cyan">Esc</Text> back{" "}
           <Text color="cyan">j/k</Text> navigate
         </Text>
